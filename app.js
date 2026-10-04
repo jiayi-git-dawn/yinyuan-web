@@ -1314,7 +1314,10 @@
     }
     hoverView.classList.add("place-writing-is-open");
     soundToggle?.setAttribute("aria-hidden", "true");
-    if (soundToggle) soundToggle.tabIndex = -1;
+    if (soundToggle) {
+      soundToggle.tabIndex = -1;
+      soundToggle.hidden = true;
+    }
     placeWritingCard.hidden = false;
     requestAnimationFrame(() => placeWritingCard.classList.add("is-open"));
     setTimeout(() => placeWritingInput?.focus(), 360);
@@ -1323,10 +1326,15 @@
   function closePlaceWriting() {
     if (!placeWritingCard) return;
     hoverView.classList.remove("place-writing-is-open");
-    soundToggle?.setAttribute("aria-hidden", "false");
-    if (soundToggle) soundToggle.tabIndex = 0;
     placeWritingCard.classList.remove("is-open");
-    setTimeout(() => { placeWritingCard.hidden = true; }, 320);
+    setTimeout(() => {
+      placeWritingCard.hidden = true;
+      soundToggle?.setAttribute("aria-hidden", "false");
+      if (soundToggle) {
+        soundToggle.hidden = false;
+        soundToggle.tabIndex = 0;
+      }
+    }, 320);
   }
 
   function leavePlaceMemory(withNote = true) {

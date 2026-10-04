@@ -4792,7 +4792,9 @@ body.is-entering .garden-3d-root {
 }
 
 /* 书写开始后，不再用声音入口打断此刻；已播放的园声保持原状态。 */
-.hover-view.place-writing-is-open > .hover-controls {
+.hover-view.place-writing-is-open #sound-toggle,
+.hover-view.place-writing-is-open #sound-toggle[hidden] {
+  display: none !important;
   visibility: hidden !important;
   opacity: 0 !important;
   pointer-events: none !important;
