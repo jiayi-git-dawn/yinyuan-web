@@ -1,0 +1,20 @@
+{
+  "name": "yinyuan-hover-garden-3d",
+  "private": true,
+  "version": "0.3.0",
+  "scripts": {
+    "build": "node build-static.mjs",
+    "build:3d": "esbuild ./scene3d.js --bundle --format=iife --global-name=YinGarden3DBundle --outfile=scene3d.bundle.js --minify"
+  },
+  "dependencies": {
+    "three": "0.184.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  }
+}

@@ -1,0 +1,70 @@
+# Installed dependencies and package-manager caches
+node_modules/
+.npm-cache/
+
+# Temporary builds, browser profiles, and publishing worktrees
+tmp/
+dist/
+
+# Only publish production assets used by the current page. All other source
+# experiments remain available in this folder locally without entering GitHub.
+assets/*
+!assets/bamboo-courtyard-east-lake-v11-web.wav
+!assets/garden-entry-day-restored-v1.webp
+!assets/garden-entry-night-restored-v1.webp
+!assets/garden-overview-moonlit-night-v4.webp
+!assets/garden-path-lantern-day-v3.webp
+!assets/garden-path-lantern-night-v3.webp
+!assets/garden-tree-day-v2.webp
+!assets/garden-tree-facing-water-clear-day-v7.webp
+!assets/garden-tree-facing-water-moonlit-night-v6.webp
+!assets/garden-tree-seated-bird-day-v3.webp
+!assets/garden-tree-seated-day-v3.webp
+!assets/garden-tree-seated-night-v3.webp
+!assets/garden-water-day-v2.webp
+!assets/garden-water-night-v3.webp
+!assets/hover-garden-continuous-v1.webp
+!assets/hover-garden-morning-v1.webp
+!assets/writing-moment-day-v1.webp
+!assets/writing-moment-night-v1.webp
+!assets/yinyuan-dusk-garden.webp
+!assets/yinyuan-gate-banyan-roots-day-v1.webp
+!assets/yinyuan-gate-banyan-roots-night-v1.webp
+!assets/yinyuan-gate-cliff-day-carved-v3.webp
+!assets/yinyuan-gate-cliff-night-soft-lit-v6.webp
+!assets/yinyuan-gate-mother-day-v1.webp
+!assets/yinyuan-gate-mother-night-v1.webp
+!assets/yinyuan-gate-threshold-v1.webp
+!assets/yinyuan-hover-dusk-dandelion-night-v1.webp
+!assets/yinyuan-hover-dusk-dandelion-v2.webp
+!assets/yinyuan-water-loop-v1.mp4
+!assets/yinyuan-water-night-loop-v1.mp4
+!assets/yinyuan-water-soft3-clean-v4.wav
+
+# Local visual exports and review captures; production assets live under assets/
+/yinyuan-*.png
+/隐园水边-*.wav
+
+# Local environment files and credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials*.json
+secrets*.json
+
+# Generated Python cache files
+__pycache__/
+*.pyc
+
+# Local-only Feishu editing automation
+tools/
+
+# Hosting metadata from earlier local publishing experiments
+.openai/
+
+# Local logs and operating-system metadata
+*.log
+Thumbs.db
+.DS_Store

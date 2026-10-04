@@ -1,0 +1,508 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta id="viewport-meta" name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="隐园 V0.1：一个允许你暂时停下来，并为此刻留下一点痕迹的精神角落。"
+    />
+    <meta name="theme-color" content="#17231f" />
+    <link rel="icon" href="data:," />
+    <title>隐园 · 允许此刻停留</title>
+    <script>
+      (() => {
+        const viewportMeta = document.querySelector("#viewport-meta");
+        const syncViewport = () => {
+          const isTouchDevice = window.matchMedia("(hover: none) and (pointer: coarse)").matches;
+          const isLandscape = window.matchMedia("(orientation: landscape)").matches;
+          viewportMeta.content = isTouchDevice && isLandscape
+            ? "width=1366, user-scalable=yes"
+            : "width=device-width, initial-scale=1.0";
+        };
+        syncViewport();
+        window.addEventListener("orientationchange", () => window.setTimeout(syncViewport, 120));
+
+        const hour = new Date().getHours();
+        const automaticLight = hour >= 7 && hour < 19 ? "day" : "night";
+        const requestedLight = new URLSearchParams(window.location.search).get("light");
+
+        document.documentElement.dataset.light =
+          requestedLight === "day" || requestedLight === "night"
+            ? requestedLight
+            : automaticLight;
+      })();
+    </script>
+    <link rel="stylesheet" href="./styles.css?v=20261002-water-sound-v1" />
+  </head>
+  <body>
+    <aside class="landscape-gate" aria-label="横屏体验提示">
+      <span class="landscape-gate-mark" aria-hidden="true">隐</span>
+      <p>把手机轻轻横过来</p>
+      <small>横过来，隐园便在眼前展开。</small>
+      <span class="landscape-gate-phone" aria-hidden="true"></span>
+    </aside>
+    <div class="ambient-scene" aria-hidden="true">
+      <div class="ambient-image"></div>
+      <div class="ambient-veil"></div>
+      <div class="ambient-breath"></div>
+      <div class="seed seed-one"></div>
+      <div class="seed seed-two"></div>
+      <div class="seed seed-three"></div>
+    </div>
+
+    <div class="garden-3d-root" id="garden-3d-root" data-mode="entry" aria-hidden="true">
+      <div class="garden-view-images" aria-hidden="true">
+        <div class="garden-view-image garden-view-image--overview"></div>
+        <div class="garden-view-image garden-view-image--tree"></div>
+        <div class="garden-view-image garden-view-image--tree-bird"></div>
+        <div class="garden-view-image garden-view-image--path"></div>
+        <div class="garden-view-image garden-view-image--water"></div>
+      </div>
+      <video
+        class="garden-water-video"
+        id="garden-water-video"
+        muted
+        loop
+        playsinline
+        preload="none"
+        poster="./assets/garden-water-day-v2.webp"
+        data-day-src="./assets/yinyuan-water-loop-v1.mp4"
+        data-night-src="./assets/yinyuan-water-night-loop-v1.mp4"
+        data-day-poster="./assets/garden-water-day-v2.webp"
+        data-night-poster="./assets/garden-water-night-v3.webp"
+        aria-hidden="true"
+      ></video>
+      <div class="garden-presence-light" aria-hidden="true"></div>
+      <canvas id="garden-3d-canvas"></canvas>
+      <div class="garden-3d-loading" id="garden-3d-loading">
+        <span class="garden-3d-loading-mark" aria-hidden="true"></span>
+        <span>雾正在让出一条路</span>
+      </div>
+      <div class="garden-3d-vignette"></div>
+    </div>
+
+    <header class="site-header">
+      <button class="brand text-button" type="button" data-go="entry" aria-label="返回隐园入口">
+        <span class="brand-mark">隐</span>
+        <span class="brand-name">隐园</span>
+      </button>
+
+      <nav class="quiet-nav" aria-label="主要导航">
+        <button
+          class="light-toggle text-button"
+          id="light-toggle"
+          type="button"
+          aria-label="切换观看光线"
+        >
+          <span class="light-toggle-dot" aria-hidden="true"></span>
+          <span id="light-toggle-label">日间</span>
+        </button>
+        <button class="nav-link text-button" type="button" data-go="garden">我的园</button>
+        <button class="nav-link text-button" id="guide-link" type="button">如何入园</button>
+      </nav>
+    </header>
+
+    <main id="app" tabindex="-1">
+      <section class="view entry-view is-active" data-view="entry" aria-labelledby="entry-title">
+        <div class="entry-landscape" aria-hidden="true"></div>
+        <div class="entry-cloud-drift" aria-hidden="true"></div>
+        <div class="entry-dandelion-seeds" aria-hidden="true"><i></i><i></i></div>
+
+        <div class="entry-copy entry-copy--restored">
+          <p class="eyebrow">不必赶路，也不必回答</p>
+          <h1 id="entry-title">在喧嚣之外，<br />留一座园给自己。</h1>
+          <p class="lead">先在园门前停一停。想往里走时，园就在这里。</p>
+
+          <div class="entry-actions" aria-label="你现在可以">
+            <button class="entry-action entry-action--primary" id="pause-at-gate" type="button">
+              <span>在此停一会</span>
+              <small>无需填写</small>
+            </button>
+            <button class="entry-action entry-action--secondary" type="button" data-go="record">
+              留下一念
+            </button>
+          </div>
+          <p class="entry-privacy">写下的内容，只留在这台浏览器里。</p>
+        </div>
+
+        <div class="entry-footnote" id="entry-footnote" data-copy-track aria-label="隐园的三句话">
+          <p class="entry-footnote-item is-current" data-gate-copy="0"><span>允许先于改变。</span></p>
+          <p class="entry-footnote-item is-next" data-gate-copy="1"><span>先看见此刻，再决定去向。</span></p>
+          <p class="entry-footnote-item is-previous" data-gate-copy="2"><span>不必急着抵达，停留也有意义。</span></p>
+        </div>
+      </section>
+
+      <section class="view hover-view" data-view="hover" aria-labelledby="hover-title" hidden>
+        <div class="hover-scene living-garden garden-photo-fallback" id="living-garden" aria-label="园中的树、水与小径">
+          <div class="living-garden-image"></div>
+          <div class="living-garden-light"></div>
+          <div class="living-garden-clouds"></div>
+          <div class="living-garden-mist mist-near"></div>
+          <div class="living-garden-mist mist-far"></div>
+          <div class="canopy-breath canopy-breath-one"></div>
+          <div class="canopy-breath canopy-breath-two"></div>
+          <div class="living-water" id="living-water"></div>
+          <div class="garden-bird" id="garden-bird">
+            <span class="bird-body"></span>
+            <span class="bird-head"></span>
+            <span class="bird-tail"></span>
+          </div>
+          <div class="garden-fireflies">
+            <i></i><i></i><i></i><i></i><i></i>
+          </div>
+          <div class="garden-stones" id="garden-stones"></div>
+          <div class="living-garden-veil"></div>
+        </div>
+
+        <time class="hover-clock visually-hidden" id="hover-clock" aria-live="off">00:00</time>
+
+        <div class="hover-center">
+          <div class="hover-intro" id="hover-intro">
+            <p class="eyebrow">悬停时刻</p>
+            <h2 id="hover-title">你来了，就是全部。</h2>
+            <p class="hover-invitation">不用急着留下些什么，先让这一刻慢慢经过。</p>
+          </div>
+
+          <section class="hover-reflection" id="hover-reflection" aria-labelledby="hover-reflection-title" hidden>
+            <p class="eyebrow">离开前</p>
+            <h2 id="hover-reflection-title">这一刻已经发生了。</h2>
+            <p class="reflection-copy">不必说明它，也不必证明自己有所改变。</p>
+            <div class="hover-choice-actions" aria-label="离开悬停时刻">
+              <button class="button button-quiet place-stone" id="place-stone" type="button">
+                放下一颗小石头
+              </button>
+              <button class="skip-reflection text-button" id="leave-without-trace" type="button">
+                就这样离开
+              </button>
+            </div>
+            <button class="reflection-back text-button" id="reflection-back" type="button">
+              <span aria-hidden="true">←</span>
+              返回刚才
+            </button>
+          </section>
+
+        </div>
+
+        <div class="hover-controls" id="hover-controls" aria-label="悬停时刻的选择">
+          <button
+            class="sound-invitation text-button"
+            id="sound-toggle"
+            type="button"
+            aria-pressed="false"
+            aria-hidden="false"
+          >
+            <span class="sound-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+            <span id="sound-label">听一会园声</span>
+          </button>
+        </div>
+
+        <button class="return-overview text-button" id="return-overview" type="button" hidden>
+          <span aria-hidden="true">←</span> 回到园中
+        </button>
+
+        <button
+          class="garden-fullscreen-toggle text-button"
+          id="garden-fullscreen-toggle"
+          type="button"
+          aria-pressed="false"
+          aria-label="让园子铺开"
+          hidden
+        >
+          <span class="fullscreen-mark" aria-hidden="true"></span>
+          <span id="garden-fullscreen-label">让园子铺开</span>
+        </button>
+
+        <nav class="garden-place-nav" id="garden-place-nav" aria-label="在园中慢慢走走">
+          <button class="place-link" type="button" data-place="tree">
+            <span>树下</span><small>坐一会儿</small>
+          </button>
+          <span class="place-path-line" aria-hidden="true"></span>
+          <button class="place-link" type="button" data-place="path">
+            <span>小径</span><small>走几步</small>
+          </button>
+          <span class="place-path-line" aria-hidden="true"></span>
+          <button class="place-link" type="button" data-place="water">
+            <span>水边</span><small>看水流</small>
+          </button>
+        </nav>
+
+        <p class="place-whisper" id="place-whisper" aria-live="polite">想停在哪里，再轻轻选一处。</p>
+        <p class="water-retreat-hint" id="water-retreat-hint" aria-hidden="true">
+          想再做些什么，轻轻动一下鼠标就好。
+        </p>
+        <div class="stone-memory-whisper" id="stone-memory-whisper" aria-live="polite" hidden></div>
+
+        <aside class="garden-memory-card" id="garden-memory-card" hidden aria-live="polite">
+          <button class="memory-card-close text-button" id="memory-card-close" type="button" aria-label="收起这段停留">×</button>
+          <p class="memory-card-kicker">你来过的那天</p>
+          <time id="memory-card-date"></time>
+          <p class="memory-card-place" id="memory-card-place"></p>
+          <blockquote class="memory-card-note" id="memory-card-note" hidden></blockquote>
+          <p class="memory-card-copy" id="memory-card-copy">那天，你在这里停了一会儿。</p>
+          <p class="memory-card-sound" id="memory-card-sound" hidden>那天，园声也陪你待了一会儿。</p>
+          <details class="memory-card-more">
+            <summary>更多</summary>
+            <button class="text-button" id="memory-card-delete" type="button">让这段记忆回到土里</button>
+          </details>
+        </aside>
+
+        <div class="hover-quiet-actions" aria-label="离开或留下">
+          <button class="hover-write-place text-button" id="hover-write-place" type="button" aria-hidden="true">留一句在这里</button>
+          <span aria-hidden="true"></span>
+          <button class="finish-hover text-button" id="finish-hover" type="button" aria-hidden="true">先停到这里</button>
+          <span aria-hidden="true"></span>
+          <button class="exit-link text-button" id="exit-hover" type="button">随时离开</button>
+        </div>
+
+        <section class="place-writing-card" id="place-writing-card" hidden aria-labelledby="place-writing-title">
+          <button class="place-writing-close text-button" id="place-writing-close" type="button" aria-label="收起">×</button>
+          <p class="memory-card-kicker">留在此处</p>
+          <h3 id="place-writing-title">只留一句，也可以。</h3>
+          <p id="place-writing-context">这句话会和一颗石头一起留在你现在站着的地方。</p>
+          <textarea id="place-writing-input" maxlength="120" rows="2" placeholder="此刻想留在这里的……"></textarea>
+          <div class="place-writing-actions">
+            <button class="button button-quiet" id="place-writing-save" type="button">让它留在这里</button>
+            <button class="text-button" id="place-writing-skip" type="button">只放一颗石头</button>
+          </div>
+        </section>
+
+        <audio
+          id="garden-wind-audio"
+          src="./assets/bamboo-courtyard-east-lake-v11-web.wav"
+          data-garden-src="./assets/bamboo-courtyard-east-lake-v11-web.wav"
+          data-water-src="./assets/yinyuan-water-soft3-clean-v4.wav"
+          preload="none"
+          loop
+        ></audio>
+      </section>
+
+      <section class="view record-view" data-view="record" aria-labelledby="record-title" hidden>
+        <div class="record-space">
+          <div class="record-heading">
+            <h2 id="record-title">此刻，<br /><span>有什么正在心里流动？</span></h2>
+            <p class="record-invitation">
+              一个词、一句话，<br />或一段还没有想清楚的话，都可以。
+            </p>
+          </div>
+
+          <label class="writing-field" for="trace-note">
+            <span class="visually-hidden">写下此刻正在心里流动的内容</span>
+            <textarea
+              id="trace-note"
+              rows="1"
+              maxlength="2000"
+              placeholder="从这里开始……"
+              autocomplete="off"
+            ></textarea>
+            <span class="writing-line" aria-hidden="true"></span>
+          </label>
+
+          <div class="record-status-row">
+            <p class="draft-status" id="draft-status" role="status" aria-live="polite"></p>
+            <p class="writing-count" id="writing-count" hidden><span id="note-count">0</span>/2000</p>
+          </div>
+
+          <div class="record-actions" id="record-actions" aria-hidden="true">
+            <button class="button button-primary" id="save-trace" type="button">让它落进园里</button>
+          </div>
+
+          <button class="record-hover-link text-button" type="button" data-go="hover">
+            还不想写<span aria-hidden="true"> · </span>回园里坐一会
+          </button>
+        </div>
+
+        <button class="exit-link text-button" type="button" data-go="entry">暂时离开</button>
+      </section>
+
+      <section class="view arrival-view" data-view="arrival" aria-labelledby="arrival-title" hidden>
+        <div class="landing-seed" aria-hidden="true">
+          <span class="landing-seed-crown"></span>
+          <span class="landing-seed-stem"></span>
+        </div>
+
+        <div class="arrival-copy-block">
+          <p class="eyebrow" id="arrival-eyebrow">一枚新落下的种子</p>
+          <h2 id="arrival-title">这一刻已经被你看见。</h2>
+          <p id="arrival-copy">它不需要成为结论，也不要求你马上改变。</p>
+          <p class="arrival-saved" id="arrival-saved">它已经作为一枚种子，留在你的园里。</p>
+
+          <div class="primary-actions arrival-actions">
+            <button class="button button-primary" id="arrival-primary" type="button" data-go="garden">看看我的园</button>
+            <button class="button button-ghost" id="arrival-secondary" type="button">再写一点</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="view garden-view" data-view="garden" aria-labelledby="garden-title" hidden>
+        <div class="garden-memory-stage">
+          <header class="garden-page-intro">
+            <p class="garden-page-kicker">
+              <span>我的园</span>
+              <span class="garden-page-kicker-dot" aria-hidden="true">·</span>
+              <span>专属于这台浏览器</span>
+            </p>
+            <h2 id="garden-title">园替你收着</h2>
+            <p>每一次停下，都不必成为答案。</p>
+          </header>
+
+          <div class="garden-stack-viewport" id="garden-stack-viewport" tabindex="0" aria-label="上下滚动浏览园中时刻">
+            <section class="garden-heading garden-journal-card" id="garden-record-card" aria-live="polite">
+
+          <div class="garden-record-empty" id="garden-record-empty" hidden>
+              <p class="garden-record-kicker">园中还很安静</p>
+            <p class="garden-empty-title">园里还没有留下什么。</p>
+            <p class="garden-empty-copy">你可以先去停一会，<br />也可以写下此刻。</p>
+            <div class="garden-empty-actions">
+              <button class="button button-primary" type="button" data-go="hover">去园里停一会</button>
+              <button class="button button-ghost" type="button" data-go="record">写下此刻</button>
+            </div>
+          </div>
+
+          <article class="garden-record-content" id="garden-record-content" hidden>
+            <header class="garden-record-header">
+              <p class="garden-record-kicker" id="garden-record-kind"></p>
+              <nav class="garden-record-nav" id="garden-record-nav" aria-label="浏览园中记录" hidden>
+                <button class="text-button" id="garden-record-newer" type="button" aria-label="查看较近的记录">↑</button>
+                <span id="garden-record-position" aria-live="polite"></span>
+                <button class="text-button" id="garden-record-older" type="button" aria-label="查看较早的记录">↓</button>
+              </nav>
+            </header>
+
+            <blockquote class="garden-record-quote" id="garden-record-quote" hidden></blockquote>
+            <p class="garden-record-event" id="garden-record-event"></p>
+            <p class="garden-record-relation" id="garden-record-relation" hidden></p>
+
+            <footer class="garden-record-footer">
+              <time id="garden-record-date"></time>
+              <span class="garden-record-place" id="garden-record-place" hidden></span>
+            </footer>
+
+            <details class="garden-record-more" id="garden-record-more">
+              <summary>更多</summary>
+              <button class="text-button" id="garden-record-delete" type="button">移出我的园</button>
+            </details>
+              </article>
+            </section>
+          </div>
+          <p class="garden-scroll-cue" id="garden-scroll-cue">轻轻滚动，走回更早的时刻</p>
+          <button class="garden-return-gate text-button" type="button" data-go="entry">
+            <span aria-hidden="true">←</span> 回到园门
+          </button>
+        </div>
+
+        <div class="garden-list" id="garden-list" aria-live="polite"></div>
+
+        <div class="entry-footnote garden-footnote" data-copy-track aria-label="隐园的三句话">
+          <p class="entry-footnote-item is-current" data-gate-copy="0"><span>允许先于改变。</span></p>
+          <p class="entry-footnote-item is-next" data-gate-copy="1"><span>先看见此刻，再决定去向。</span></p>
+          <p class="entry-footnote-item is-previous" data-gate-copy="2"><span>不必急着抵达，停留也有意义。</span></p>
+        </div>
+
+      </section>
+
+      <section class="view feedback-view" data-view="feedback" aria-labelledby="feedback-title" hidden>
+        <form class="panel feedback-panel" id="feedback-form">
+          <div class="panel-heading">
+            <p class="eyebrow">一次很短的回望</p>
+            <h2 id="feedback-title">刚才，你有感到可以暂时停下来吗？</h2>
+            <p>这里评价的是隐园，不是你。没有“正确感受”。</p>
+          </div>
+
+          <fieldset class="feedback-question">
+            <legend>最接近你的感受</legend>
+            <div class="radio-row">
+              <label><input type="radio" name="permission" value="有" required /><span>有</span></label>
+              <label><input type="radio" name="permission" value="有一点" /><span>有一点</span></label>
+              <label><input type="radio" name="permission" value="没有" /><span>没有</span></label>
+              <label><input type="radio" name="permission" value="说不清" /><span>说不清</span></label>
+            </div>
+          </fieldset>
+
+          <label class="note-field" for="pressure-note">
+            <span>哪一步让你困惑、出戏或感到压力？</span>
+            <textarea id="pressure-note" rows="2" maxlength="180" placeholder="没有也可以留白"></textarea>
+          </label>
+
+          <label class="note-field" for="keep-note">
+            <span>如果隐园只能保留一样东西，你希望是什么？</span>
+            <textarea id="keep-note" rows="2" maxlength="180" placeholder="可选"></textarea>
+          </label>
+
+          <div class="panel-actions">
+            <button class="button button-primary" type="submit">留下反馈</button>
+            <button class="button button-ghost" type="button" data-go="entry">暂时不说</button>
+          </div>
+        </form>
+      </section>
+    </main>
+
+    <aside class="research-panel" id="research-panel" hidden aria-labelledby="research-title">
+      <div class="research-heading">
+        <div>
+          <p class="eyebrow">造园师视图</p>
+          <h2 id="research-title">V0.1 本地验证记录</h2>
+        </div>
+        <button class="icon-button" id="close-research" type="button" aria-label="关闭验证记录">×</button>
+      </div>
+      <div class="research-stats" id="research-stats"></div>
+      <div class="research-actions">
+        <button class="button button-quiet" id="export-research" type="button">导出测试记录</button>
+        <button class="text-button danger-link" id="reset-research" type="button">清空本机测试数据</button>
+      </div>
+      <p class="research-note">用网址参数 <code>?research=1</code> 打开本面板。数据不会自动上传。</p>
+    </aside>
+
+    <button class="research-trigger text-button" id="research-trigger" type="button" hidden>验证记录</button>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <dialog class="guide-dialog" id="guide-dialog" aria-labelledby="guide-title">
+      <div class="guide-sheet">
+        <button class="guide-close text-button" id="guide-close" type="button" aria-label="关闭如何入园">×</button>
+        <header class="guide-heading">
+          <p class="guide-kicker">一张入园小笺</p>
+          <h2 id="guide-title">如何入园</h2>
+          <p>隐园没有必须完成的任务。你可以从任何一种方式开始。</p>
+        </header>
+
+        <div class="guide-paths">
+          <section>
+            <span class="guide-index">壹</span>
+            <div><h3>在园里停一会</h3><p>去树下、小径或水边。什么都不写，也可以。</p></div>
+          </section>
+          <section>
+            <span class="guide-index">贰</span>
+            <div><h3>留下一念</h3><p>写下一个词、一句话，或一段还没有想清楚的话。</p></div>
+          </section>
+          <section>
+            <span class="guide-index">叁</span>
+            <div><h3>回到「我的园」</h3><p>回望你曾留下的文字和石头。</p></div>
+          </section>
+        </div>
+
+        <p class="guide-privacy"><span aria-hidden="true">○</span> 你留下的内容只保存在当前浏览器中，不会自动上传，也可以随时移除。</p>
+
+        <footer class="guide-actions">
+          <button class="button button-primary" id="guide-start" type="button">去园里停一会</button>
+          <a id="guide-learn-more" href="#" target="_blank" rel="noreferrer">继续探索隐园 <span aria-hidden="true">→</span></a>
+        </footer>
+      </div>
+    </dialog>
+
+    <dialog class="trace-remove-dialog" id="trace-remove-dialog" aria-labelledby="trace-remove-title">
+      <form method="dialog">
+        <p class="trace-remove-kicker">移出我的园</p>
+        <h2 id="trace-remove-title"></h2>
+        <p id="trace-remove-copy"></p>
+        <div class="trace-remove-actions">
+          <button class="button button-ghost" value="cancel" type="submit">再留一会</button>
+          <button class="button trace-remove-confirm" id="trace-remove-confirm" value="confirm" type="submit">确认移除</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script src="./config.js?v=20260814-feishu-guide-v36"></script>
+    <script src="./water-scene.js?v=20261002-water-video-v1" defer></script>
+    <script src="./app.js?v=20261002-contextual-sound-v1" defer></script>
+  </body>
+</html>
