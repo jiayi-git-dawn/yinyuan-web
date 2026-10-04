@@ -1312,6 +1312,9 @@
         ? "这句话会和一颗石头一起留在你现在坐着的地方。"
         : "这句话会和一颗石头一起留在你现在站着的地方。";
     }
+    hoverView.classList.add("place-writing-is-open");
+    soundToggle?.setAttribute("aria-hidden", "true");
+    if (soundToggle) soundToggle.tabIndex = -1;
     placeWritingCard.hidden = false;
     requestAnimationFrame(() => placeWritingCard.classList.add("is-open"));
     setTimeout(() => placeWritingInput?.focus(), 360);
@@ -1319,6 +1322,9 @@
 
   function closePlaceWriting() {
     if (!placeWritingCard) return;
+    hoverView.classList.remove("place-writing-is-open");
+    soundToggle?.setAttribute("aria-hidden", "false");
+    if (soundToggle) soundToggle.tabIndex = 0;
     placeWritingCard.classList.remove("is-open");
     setTimeout(() => { placeWritingCard.hidden = true; }, 320);
   }
