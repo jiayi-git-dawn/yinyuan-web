@@ -79,3 +79,11 @@ python -m http.server 4173
 上线后查看：Cloudflare 后台 → 存储和数据库 → D1 SQLite 数据库 → yinyuan-messages → 探索数据 → messages。查看需要登录你的 Cloudflare 账号。已保存的正文不应复制进 Git、公开页面或普通日志。通知功能暂不接入。
 
 官方参考：https://developers.cloudflare.com/pages/functions/bindings/ 、https://developers.cloudflare.com/pages/functions/local-development/ 。
+
+## 水边与原地书写修复（2026-10-23）
+
+- 日间使用 `yinyuan-water-day-loop-v2.mp4`，夜间使用 `yinyuan-water-night-loop-v3.mp4`，均为 1280×720、25fps、无声视频。首尾顺向叠化、稳定岸边，合成约 20 秒的连续流以减少浏览器循环寻帧。视频首帧和底图匹配，只在解码就绪后显示视频，循环时不撤下可见画面。
+- 夜景通过 built-in imagegen 对日间首帧调整光线，提示词与素材路径见 `scripts/water-night-relight-prompt.txt`；夜间运动来自日间水流，不沿用草木不一致的旧夜间视频。`prepare-water-video-loop.py` 生成日间循环，`match-night-water-video.py` 生成对应夜景，需要 FFmpeg、numpy、Pillow。
+- 水声保留原素材，仅将默认增益从 0.92 调整至 0.32（约降低 9dB），继续手动开启，不随视频自动出声。不同耳机、外放设备的实际音量仍需分别体验。
+- 手机关闭环境自动飘种和长按散种，水边所有设备均不散种；不影响主动书写时选择植物。
+- 「留一句在这里」恢复原地小卡片，不跳整页；保存为当前「我的园」支持的文字记录，取消或关闭保留未保存文字。移除该卡片及入园说明中的石头选项和旧文案，不删除历史记录。

@@ -3689,7 +3689,7 @@ html[data-light="night"] body[data-view="hover"] .garden-3d-root.presence-was-to
 }
 
 .garden-view-image--water::after {
-  background-image: url("./assets/garden-water-day-v2.webp");
+  background-image: url("./assets/garden-water-day-loop-v2.webp");
   -webkit-mask-image: radial-gradient(ellipse 38% 62% at 7% 77%, #000 0 48%, transparent 78%);
   mask-image: radial-gradient(ellipse 38% 62% at 7% 77%, #000 0 48%, transparent 78%);
 }
@@ -3703,14 +3703,14 @@ html[data-light="night"] .garden-view-image--path::after {
 }
 
 html[data-light="night"] .garden-view-image--water::after {
-  background-image: url("./assets/garden-water-night-v3.webp");
+  background-image: url("./assets/garden-water-night-loop-v3.webp");
 }
 
 .garden-view-image--tree { background-image: url("./assets/garden-tree-seated-day-v3.webp"); }
 .garden-view-image--overview { background-image: url("./assets/garden-tree-day-v2.webp"); }
 .garden-view-image--tree-bird { background-image: url("./assets/garden-tree-seated-bird-day-v3.webp"); }
 .garden-view-image--path { background-image: url("./assets/garden-path-lantern-day-v3.webp"); }
-.garden-view-image--water { background-image: url("./assets/garden-water-day-v2.webp"); }
+.garden-view-image--water { background-image: url("./assets/garden-water-day-loop-v2.webp"); }
 .garden-3d-root[data-place="overview"] .garden-view-image--overview,
 .garden-3d-root[data-place="tree"] .garden-view-image--tree,
 .garden-3d-root[data-place="path"] .garden-view-image--path,
@@ -3729,7 +3729,7 @@ html[data-light="night"] .garden-view-image--overview {
 html[data-light="night"] .garden-view-image--tree,
 html[data-light="night"] .garden-view-image--tree-bird { background-image: url("./assets/garden-tree-seated-night-v3.webp"); }
 html[data-light="night"] .garden-view-image--path { background-image: url("./assets/garden-path-lantern-night-v3.webp"); }
-html[data-light="night"] .garden-view-image--water { background-image: url("./assets/garden-water-night-v3.webp"); }
+html[data-light="night"] .garden-view-image--water { background-image: url("./assets/garden-water-night-loop-v3.webp"); }
 
 .garden-3d-root::after {
   content: "";
@@ -3836,6 +3836,15 @@ html[data-light="night"] .garden-3d-root::before { filter: brightness(.38) satur
   100% { opacity: 0; transform: scale(8.3, 5.7); }
 }
 
+.garden-3d-root[data-place="water"] .garden-drifting-seed { display: none !important; }
+body.water-ui-can-retreat .ambient-scene > .seed { display: none !important; }
+@media (pointer: coarse), (hover: none) {
+  .ambient-scene > .seed,
+  .entry-dandelion-seeds,
+  .garden-3d-root .garden-drifting-seed,
+  .hover-dandelion,
+  .loose-seed { display: none !important; animation: none !important; }
+}
 .garden-drifting-seed {
   position: fixed;
   z-index: 2;
@@ -7467,7 +7476,7 @@ body[data-view="garden"] .garden-3d-root[data-place="path"] .garden-view-image--
 
 body[data-view="hover"] .garden-3d-root[data-place="water"] .garden-view-image--water,
 body[data-view="garden"] .garden-3d-root[data-place="water"] .garden-view-image--water {
-  background-image: url("./assets/garden-water-day-v2.webp") !important;
+  background-image: url("./assets/garden-water-day-loop-v2.webp") !important;
 }
 
 html[data-light="night"] body[data-view="hover"] .garden-3d-root[data-place="overview"] .garden-view-image--overview,
@@ -7487,7 +7496,7 @@ html[data-light="night"] body[data-view="garden"] .garden-3d-root[data-place="pa
 
 html[data-light="night"] body[data-view="hover"] .garden-3d-root[data-place="water"] .garden-view-image--water,
 html[data-light="night"] body[data-view="garden"] .garden-3d-root[data-place="water"] .garden-view-image--water {
-  background-image: url("./assets/garden-water-night-v3.webp") !important;
+  background-image: url("./assets/garden-water-night-loop-v3.webp") !important;
 }
 
 /* V2 水边：画面自己流动，声音仍由来园的人决定是否听见。 */

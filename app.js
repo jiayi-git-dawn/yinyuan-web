@@ -65,7 +65,7 @@
     },
     water: {
       src: gardenWindAudio?.dataset.waterSrc || "",
-      volume: 0.92,
+      volume: 0.32,
     },
   };
   const finishHoverButton = document.querySelector("#finish-hover");
@@ -138,6 +138,7 @@
   let finishRevealTimer = null;
   let introFadeTimer = null;
   let longPressTimer = null;
+  let placeWritingCloseTimer = null;
   let stoneWhisperTimer = null;
   let audioFadeTimer = null;
   let soundSceneSwitchToken = 0;
@@ -314,6 +315,8 @@
     focusTrace() {},
     windBurst() {
       if (!garden3DRoot || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+      if (window.matchMedia("(pointer: coarse), (hover: none)").matches) return;
+      if (currentGardenPlace === "water") return;
       if (garden3DRoot.querySelector(".garden-drifting-seed")) return;
       const origins = { overview: [31, 79], tree: [34, 77], path: [5, 83], water: [20, 62] };
       const [originX, originY] = origins[currentGardenPlace] || origins.overview;
@@ -500,6 +503,7 @@
     staticGarden.birdTimer = null;
     garden3DRoot?.classList.remove("bird-has-arrived", "wind-is-passing");
     if (garden3DRoot) garden3DRoot.dataset.place = nextPlace;
+    if (nextPlace === "water") garden3DRoot?.querySelectorAll(".garden-drifting-seed").forEach((seed) => seed.remove());
     closeMemoryCard();
     closePlaceWriting();
     hoverView.dataset.place = nextPlace;
@@ -1334,11 +1338,10 @@
 
   function openPlaceWriting() {
     if (!placeWritingCard) return;
+    clearTimeout(placeWritingCloseTimer);
     closeMemoryCard();
     if (placeWritingContext) {
-      placeWritingContext.textContent = currentGardenPlace === "tree"
-        ? "这句话会和一颗石头一起留在你现在坐着的地方。"
-        : "这句话会和一颗石头一起留在你现在站着的地方。";
+      placeWritingContext.textContent = "留在此刻停留的地方，也可以在「我的园」回看。";
     }
     hoverView.classList.add("place-writing-is-open");
     soundToggle?.setAttribute("aria-hidden", "true");
@@ -1348,14 +1351,15 @@
     }
     placeWritingCard.hidden = false;
     requestAnimationFrame(() => placeWritingCard.classList.add("is-open"));
-    setTimeout(() => placeWritingInput?.focus(), 360);
+    setTimeout(() => { if (!placeWritingCard.hidden && placeWritingCard.classList.contains("is-open")) placeWritingInput?.focus(); }, 360);
   }
 
   function closePlaceWriting() {
     if (!placeWritingCard) return;
+    clearTimeout(placeWritingCloseTimer);
     hoverView.classList.remove("place-writing-is-open");
     placeWritingCard.classList.remove("is-open");
-    setTimeout(() => {
+    placeWritingCloseTimer = setTimeout(() => {
       placeWritingCard.hidden = true;
       soundToggle?.setAttribute("aria-hidden", "false");
       if (soundToggle) {
@@ -1367,16 +1371,23 @@
 
   function leavePlaceMemory(withNote = true) {
     const text = withNote ? placeWritingInput?.value.trim() : "";
-    const trace = saveStoneTrace(text || "");
-    if (!trace) return;
-    window.YinGarden3D?.addStone(trace);
+    if (!text) { showToast("写下一点内容，再让它留在这里。"); placeWritingInput?.focus(); return; }
+    const trace = {
+      id: createId("trace"), expression: "一枚种子", kind: "seed", stage: "seed",
+      note: text.slice(0, 120), plant: "", location: currentGardenPlace,
+      visitedPlaces: [...hoverVisitedPlaces], daypart: getGardenDaypart(),
+      createdAt: new Date().toISOString(),
+    };
+    const traces = read(STORAGE.traces);
+    traces.unshift(trace);
+    if (!write(STORAGE.traces, traces)) { showToast("还没能留进园里，写下的话仍在这里。"); return; }
+    renderGarden({ newTraceId: trace.id });
+    track("trace_saved", { kind: trace.kind, noteLength: trace.note.length, source: "place-card" });
     if (placeWritingInput) placeWritingInput.value = "";
     closePlaceWriting();
     if (placeWhisper) {
       const locationLabel = GARDEN_PLACES[currentGardenPlace]?.label || "园里";
-      placeWhisper.textContent = text
-        ? `这句话和一颗石头，一起留在${locationLabel}了。`
-        : `一颗石头留在${locationLabel}了。`;
+      placeWhisper.textContent = `这句话留在${locationLabel}了。`;
     }
     setTimeout(() => {
       if (placeWhisper) {
@@ -2255,10 +2266,10 @@
   leaveWithoutTraceButton.addEventListener("click", leaveHoverWithoutTrace);
   reflectionBackButton?.addEventListener("click", returnToHoverFromReflection);
   memoryCardClose?.addEventListener("click", closeMemoryCard);
-  hoverWritePlace?.addEventListener("click", () => navigate("record"));
+  hoverWritePlace?.addEventListener("click", openPlaceWriting);
   placeWritingClose?.addEventListener("click", closePlaceWriting);
   placeWritingSave?.addEventListener("click", () => leavePlaceMemory(true));
-  placeWritingSkip?.addEventListener("click", () => leavePlaceMemory(false));
+  placeWritingSkip?.addEventListener("click", closePlaceWriting);
   memoryCardDelete?.addEventListener("click", () => {
     if (openMemoryTraceId) deleteTrace(openMemoryTraceId);
   });
@@ -2484,7 +2495,7 @@
   });
 
   hoverView.addEventListener("pointerdown", (event) => {
-    if (event.target.closest("button, a, nav")) return;
+    if (event.target.closest("button, a, nav, input, textarea, #place-writing-card")) return;
     clearTimeout(longPressTimer);
     const { clientX, clientY } = event;
     longPressTimer = setTimeout(() => {
