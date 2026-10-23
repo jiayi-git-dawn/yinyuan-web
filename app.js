@@ -100,7 +100,6 @@
     summary.hidden = !selectedPlant;
   }
   let destroyPlantGrowth = null;
-  let plantGrowthSeen = false;
   let plantSettleTimer = null;
   let plantCloseTimer = null;
   const arrivalSaved = document.querySelector("#arrival-saved");
@@ -970,7 +969,13 @@
     }
 
     try {
-      await ensureWaterAudioReady();
+      // Start/resume in the tap handler, before network or decoding can consume
+      // the user activation required by mobile browsers (including WebKit).
+      const ready = ensureWaterAudioReady();
+      const resumed = waterAudioContext && waterAudioContext.state !== "running"
+        ? waterAudioContext.resume() : Promise.resolve();
+      await Promise.all([ready, resumed]);
+      if (waterAudioContext.state !== "running") throw new Error("Water audio context did not start");
     } catch (error) {
       console.warn("Seamless water audio was unavailable; using the media fallback.", error);
       await playWithMediaElement();
@@ -1859,7 +1864,7 @@
     requestAnimationFrame(alignPlantCopy);
     if (open) {
       destroyPlantGrowth = window.YinPlantGrowth.mount(plantGrowthRoot, {
-        immediate: plantGrowthSeen,
+        immediate: false,
         selected: selectedPlant,
         onSelect: (name) => {
           selectedPlant = validPlant(name);
@@ -1882,7 +1887,6 @@
           }
         },
       });
-      plantGrowthSeen = true;
     }
   }
 
