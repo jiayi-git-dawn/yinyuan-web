@@ -16,12 +16,14 @@
         const syncViewport = () => {
           const isTouchDevice = window.matchMedia("(hover: none) and (pointer: coarse)").matches;
           const isLandscape = window.matchMedia("(orientation: landscape)").matches;
-          viewportMeta.content = isTouchDevice && isLandscape
+          const panelOpen = document.body?.matches('.guide-is-open, .feedback-is-open');
+          viewportMeta.content = isTouchDevice && isLandscape && !panelOpen
             ? "width=1366, user-scalable=yes"
             : "width=device-width, initial-scale=1.0";
         };
         syncViewport();
         window.addEventListener("orientationchange", () => window.setTimeout(syncViewport, 120));
+        window.addEventListener("yinyuan:panel-viewport", syncViewport);
 
         const hour = new Date().getHours();
         const automaticLight = hour >= 7 && hour < 19 ? "day" : "night";
@@ -43,6 +45,7 @@
       <p>把手机轻轻横过来</p>
       <small>横过来，隐园便在眼前展开。</small>
       <span class="landscape-gate-phone" aria-hidden="true"></span>
+      <button class="text-button portrait-guide-link" id="portrait-guide-link" type="button">如何入园</button>
     </aside>
     <div class="ambient-scene" aria-hidden="true">
       <div class="ambient-image"></div>
@@ -548,10 +551,36 @@
 
         <p class="guide-privacy"><span aria-hidden="true">○</span> 你留下的内容只保存在当前浏览器中，不会自动上传，也可以随时移除。</p>
 
+        <section class="feedback-invitation" aria-label="给创作者留个口信">
+          <button class="text-button" id="open-message" type="button">留个口信 <span aria-hidden="true">→</span></button>
+          <p>待着的感受、不太顺手的地方，或一个小建议，都可以。</p>
+        </section>
+
         <footer class="guide-actions">
           <button class="button button-primary" id="guide-start" type="button">去园里停一会</button>
           <a id="guide-learn-more" href="#" target="_blank" rel="noreferrer">继续探索隐园 <span aria-hidden="true">→</span></a>
         </footer>
+      </div>
+    </dialog>
+
+    <dialog class="guide-dialog message-dialog" id="message-dialog" aria-labelledby="message-title">
+      <div class="guide-sheet message-sheet">
+        <button class="guide-close text-button" id="message-close" type="button" aria-label="关闭口信，返回原来的页面">×</button>
+        <p class="guide-kicker">一张给造园人的小笺</p>
+        <h2 id="message-title" tabindex="-1">留个口信</h2>
+        <form id="message-form" novalidate>
+          <label for="message-body">刚才在园里，有什么想告诉我的吗？</label>
+          <textarea id="message-body" rows="5" placeholder="待着的感受、不太顺手的地方，或一个小建议，都可以。" aria-describedby="message-anonymity message-privacy message-status" spellcheck="false"></textarea>
+          <p class="message-anonymity" id="message-anonymity">这是一封匿名口信，不用署名，也不用留下联系方式。</p>
+          <p class="message-privacy" id="message-privacy"><span>只有你主动发送的这段口信会交给我。</span><span>园里的其他记录不会一起发送。</span></p>
+          <p class="message-alternative">也欢迎来微信公众号「观园志」，给我发私信。</p>
+          <p id="message-status" class="message-status" role="status" aria-live="polite"></p>
+          <button class="button button-primary" id="message-send" type="submit">发送口信</button>
+        </form>
+        <div id="message-success" class="message-success" hidden role="status">
+          <p class="message-thanks">口信收到了，谢谢你告诉我。</p>
+          <button class="button button-primary" id="message-return" type="button">回到园里</button>
+        </div>
       </div>
     </dialog>
 
@@ -571,5 +600,6 @@
     <script src="./water-scene.js?v=20261002-water-video-v1" defer></script>
     <script src="./plant-growth.js?v=20261022" defer></script>
     <script src="./app.js?v=20261004-writing-sound-v2" defer></script>
+    <script src="./feedback.js?v=20261023-local" defer></script>
   </body>
 </html>

@@ -1,0 +1,14 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "yinyuan-garden",
+  "pages_build_output_dir": "./dist",
+  "compatibility_date": "2026-10-23",
+  "d1_databases": [
+    {
+      "binding": "FEEDBACK_DB",
+      "database_name": "yinyuan-messages",
+      "database_id": "dd1b8cf3-e9d6-4e91-a858-ef99efd15481",
+      "migrations_dir": "migrations"
+    }
+  ]
+}

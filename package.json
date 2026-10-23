@@ -3,6 +3,10 @@
   "private": true,
   "version": "0.3.0",
   "scripts": {
+    "dev:feedback": "wrangler pages dev dist --ip 127.0.0.1 --port 4187",
+    "inbox:local": "node scripts/feedback-inbox.mjs",
+    "db:local": "wrangler d1 migrations apply yinyuan-messages --local",
+    "feedback:local": "wrangler d1 execute yinyuan-messages --local --command=\"SELECT created_at, body FROM messages ORDER BY created_at DESC LIMIT 50\"",
     "build": "node build-static.mjs",
     "build:3d": "esbuild ./scene3d.js --bundle --format=iife --global-name=YinGarden3DBundle --outfile=scene3d.bundle.js --minify"
   },
@@ -10,7 +14,8 @@
     "three": "0.184.0"
   },
   "devDependencies": {
-    "esbuild": "^0.25.0"
+    "esbuild": "^0.25.0",
+    "wrangler": "^4.151.3"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
