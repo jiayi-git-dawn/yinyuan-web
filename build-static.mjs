@@ -6,17 +6,27 @@ const output = join(root, "dist");
 await rm(output, { recursive: true, force: true });
 await mkdir(output, { recursive: true });
 
-const [sourceHtml, styles, config, waterScene, app] = await Promise.all([
+const [sourceHtml, styles, config, waterScene, app, plantStyles, plantGrowth] = await Promise.all([
   readFile(join(root, "index.html"), "utf8"),
   readFile(join(root, "styles.css"), "utf8"),
   readFile(join(root, "config.js"), "utf8"),
   readFile(join(root, "water-scene.js"), "utf8"),
   readFile(join(root, "app.js"), "utf8"),
+  readFile(join(root, "plant-growth.css"), "utf8"),
+  readFile(join(root, "plant-growth.js"), "utf8"),
 ]);
 
 // This is a single-page experience. Inlining the small code files avoids two
 // extra CDN round trips before the first garden image can even start loading.
 const html = sourceHtml
+  .replace(
+    /<link rel="stylesheet" href="\.\/plant-growth\.css[^"]*" \/>/,
+    `<style>\n${plantStyles}\n</style>`,
+  )
+  .replace(
+    /<script src="\.\/plant-growth\.js[^"]*" defer><\/script>/,
+    `<script>\n${plantGrowth}\n</script>`,
+  )
   .replace(
     /<link rel="stylesheet" href="\.\/styles\.css[^"]*" \/>/,
     `<style>\n${styles}\n</style>`,

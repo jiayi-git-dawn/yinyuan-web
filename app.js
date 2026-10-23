@@ -77,6 +77,32 @@
   const writingCount = document.querySelector("#writing-count");
   const draftStatus = document.querySelector("#draft-status");
   const recordActions = document.querySelector("#record-actions");
+  const saveTraceButton = document.querySelector("#save-trace");
+  const placedWriting = document.querySelector("#placed-writing");
+  const recordReceived = document.querySelector("#record-received");
+  let placedTraceId = null;
+  let editingTraceId = null;
+  let editingFromGarden = false;
+  let editingOriginalText = "";
+  const recordReturn = recordActions.querySelector("[data-go]");
+  const editCancel = document.querySelector("#record-edit-cancel");
+  const momentDialog = document.querySelector("#garden-moment-dialog");
+  let openedMomentId = null;
+  const plantToggle = document.querySelector("#plant-toggle");
+  const plantSpace = document.querySelector("#plant-space");
+  const plantGrowthRoot = document.querySelector("#writing-plant-growth");
+  const plantChoices = new Set(["风信子", "苔藓", "向日葵", "仙人掌", "爬山虎", "四叶草", "含羞草", "蒲公英"]);
+  let selectedPlant = null;
+  const validPlant = (name) => plantChoices.has(name) ? name : null;
+  function syncPlantSelection() {
+    const summary = document.querySelector("#plant-selection-summary");
+    summary.textContent = selectedPlant || "";
+    summary.hidden = !selectedPlant;
+  }
+  let destroyPlantGrowth = null;
+  let plantGrowthSeen = false;
+  let plantSettleTimer = null;
+  let plantCloseTimer = null;
   const arrivalSaved = document.querySelector("#arrival-saved");
   const arrivalPrimary = document.querySelector("#arrival-primary");
   const arrivalSecondary = document.querySelector("#arrival-secondary");
@@ -97,7 +123,7 @@
   const gardenRecordDelete = document.querySelector("#garden-record-delete");
   const gardenStackViewport = document.querySelector("#garden-stack-viewport");
   const gardenScrollCue = document.querySelector("#garden-scroll-cue");
-  const gardenReturnGate = document.querySelector(".garden-return-gate");
+  const gardenReturnGate = document.querySelector('.garden-return-gate[data-go="entry"]');
   const traceRemoveDialog = document.querySelector("#trace-remove-dialog");
   const traceRemoveTitle = document.querySelector("#trace-remove-title");
   const traceRemoveCopy = document.querySelector("#trace-remove-copy");
@@ -145,6 +171,8 @@
   let presenceLightTimer = null;
   let toastTimer = null;
   let draftTimer = null;
+  let caretFrame = null;
+  let isComposingNote = false;
   let entryTimer = null;
   let entryCopyTimer = null;
   let currentEntryCopy = 0;
@@ -1447,7 +1475,11 @@
   }
 
   function navigate(name, options = {}) {
-    if (currentView === "hover" && name !== "hover" && hoverStartedAt && !options.hoverFinalized) {
+    if (name !== "record") setPlantSpaceOpen(false);
+    if (currentView === "record" && name === "garden" && !options.newTraceId) {
+      options.newTraceId = placedTraceId || editingTraceId;
+    }
+    if (hoverStartedAt && !["hover", "garden", "record"].includes(name) && !options.hoverFinalized) {
       finalizeHover("left_early");
     }
 
@@ -1465,13 +1497,16 @@
     });
 
     currentView = name;
+    const returnStay = document.querySelector("#garden-return-stay");
+    returnStay.hidden = !hoverStartedAt;
+    returnStay.textContent = "← 回到" + (currentGardenPlace === "water" ? "水边" : currentGardenPlace === "tree" ? "树下" : currentGardenPlace === "path" ? "小径" : "园中");
     document.body.dataset.view = name;
     syncGardenFullscreenControl();
     window.YinGarden3D?.setMode(name);
     document.querySelector("#app").focus({ preventScroll: true });
     window.scrollTo({ top: 0, behavior: "smooth" });
 
-    if (name === "hover") startHover();
+    if (name === "hover" && !hoverStartedAt) startHover();
     if (name === "record") prepareRecord(options);
     if (name === "garden") renderGarden({
       newTraceId: options.newTraceId,
@@ -1481,19 +1516,29 @@
     if (!options.silent) track("view_opened", { view: name });
   }
 
+  function currentDraftKey() {
+    return editingTraceId ? `${STORAGE.draft}.edit.${editingTraceId}` : STORAGE.draft;
+  }
+
   function readDraft() {
     try {
-      const draft = JSON.parse(localStorage.getItem(STORAGE.draft) || "null");
-      return typeof draft?.text === "string" ? draft.text : "";
+      const draft = JSON.parse(localStorage.getItem(currentDraftKey()) || "null");
+      selectedPlant = validPlant(draft && typeof draft.text === "string" && Object.hasOwn(draft, "plant")
+        ? draft.plant : read(STORAGE.traces).find(item => item.id === editingTraceId)?.plant);
+      syncPlantSelection();
+      return typeof draft?.text === "string" ? draft.text : editingOriginalText;
     } catch {
-      return "";
+      selectedPlant = validPlant(read(STORAGE.traces).find(item => item.id === editingTraceId)?.plant);
+      syncPlantSelection();
+      return editingOriginalText;
     }
   }
 
   function clearDraft() {
     clearTimeout(draftTimer);
     try {
-      localStorage.removeItem(STORAGE.draft);
+      localStorage.removeItem(currentDraftKey());
+      if (editingTraceId) localStorage.removeItem(`${STORAGE.draft}.editing`);
     } catch {
       // 清理失败不影响已经完成的记录。
     }
@@ -1506,13 +1551,17 @@
   }
 
   function saveDraft() {
+    if (isSavingTrace) return;
     const text = note.value;
     try {
-      if (text.trim()) {
-        localStorage.setItem(STORAGE.draft, JSON.stringify({ text, updatedAt: new Date().toISOString() }));
-        setDraftStatus("已在本机悄悄保存");
+      if (text.trim() || selectedPlant || editingTraceId) {
+        localStorage.setItem(currentDraftKey(), JSON.stringify({ text, plant: selectedPlant, updatedAt: new Date().toISOString() }));
+        if (editingTraceId) {
+          localStorage.setItem(`${STORAGE.draft}.editing`, JSON.stringify({ traceId: editingTraceId, fromGarden: editingFromGarden }));
+        }
+        setDraftStatus("");
       } else {
-        localStorage.removeItem(STORAGE.draft);
+        localStorage.removeItem(currentDraftKey());
         setDraftStatus("");
       }
     } catch {
@@ -1521,23 +1570,55 @@
   }
 
   function resizeWritingField() {
+    if (note.hidden) return;
     note.style.height = "auto";
-    const maxHeight = window.innerHeight * (window.innerWidth <= 620 ? 0.34 : 0.42);
-    note.style.height = `${Math.min(note.scrollHeight, maxHeight)}px`;
+    note.style.height = `${note.scrollHeight}px`;
+  }
+
+  function keepWritingCaretVisible() {
+    cancelAnimationFrame(caretFrame);
+    caretFrame = requestAnimationFrame(() => {
+      if (note.hidden || document.activeElement !== note || note.selectionStart !== note.selectionEnd) return;
+      const space = recordView.querySelector(".record-space");
+      const style = getComputedStyle(note);
+      const measure = document.createElement("div");
+      measure.setAttribute("aria-hidden", "true");
+      Object.assign(measure.style, {
+        position: "absolute", visibility: "hidden", pointerEvents: "none",
+        left: "0", top: "0", width: `${note.clientWidth}px`,
+        font: style.font, lineHeight: style.lineHeight, letterSpacing: style.letterSpacing,
+        whiteSpace: "pre-wrap", overflowWrap: "break-word", padding: "0", border: "0",
+      });
+      measure.textContent = note.value.slice(0, note.selectionStart);
+      const marker = document.createElement("span");
+      marker.textContent = "\u200b";
+      measure.append(marker);
+      note.parentElement.append(measure);
+      const caretTop = note.getBoundingClientRect().top
+        + marker.getBoundingClientRect().top - measure.getBoundingClientRect().top;
+      measure.remove();
+      const bounds = space.getBoundingClientRect();
+      const lineHeight = parseFloat(style.lineHeight);
+      if (caretTop + lineHeight > bounds.bottom - 16) {
+        space.scrollTop += caretTop + lineHeight - bounds.bottom + 16;
+      } else if (caretTop < bounds.top + 8) {
+        space.scrollTop += caretTop - bounds.top - 8;
+      }
+    });
   }
 
   function updateWritingState(options = {}) {
     const length = note.value.length;
     const hasWriting = Boolean(note.value.trim());
+    saveTraceButton.disabled = (!hasWriting && !selectedPlant) || isComposingNote || isSavingTrace;
 
     noteCount.textContent = String(length);
     writingCount.hidden = length < 1600;
-    recordView.classList.toggle("has-writing", hasWriting);
-    recordActions.classList.toggle("is-visible", hasWriting);
-    recordActions.setAttribute("aria-hidden", String(!hasWriting));
+    if (!isComposingNote) recordView.classList.toggle("has-writing", hasWriting);
     resizeWritingField();
 
     if (!options.silent) {
+      keepWritingCaretVisible();
       clearTimeout(draftTimer);
       setDraftStatus("");
       draftTimer = setTimeout(saveDraft, 1800);
@@ -1545,18 +1626,49 @@
   }
 
   function prepareRecord(options = {}) {
-    recordView.classList.remove("is-releasing");
+    setPlantSpaceOpen(false);
+    document.querySelector("#record-placed-plant").hidden = true;
+    recordView.classList.remove("is-releasing", "is-placed");
     isSavingTrace = false;
+    isComposingNote = false;
+    placedTraceId = null;
+    let resumedEdit = null;
+    try {
+      resumedEdit = JSON.parse(localStorage.getItem(`${STORAGE.draft}.editing`) || "null");
+    } catch { /* 无法恢复时，仍可从已安放的原文进入修改。 */ }
+    const requestedEditId = options.editTraceId || (!options.fresh && resumedEdit?.traceId);
+    const existing = requestedEditId && read(STORAGE.traces).find((trace) => trace.id === requestedEditId);
+    editingTraceId = existing?.id || null;
+    editingFromGarden = Boolean(existing && (options.editTraceId ? options.fromGarden : resumedEdit?.fromGarden));
+    editingOriginalText = existing ? String(existing.note || "") : "";
+    recordView.classList.toggle("is-editing", Boolean(editingTraceId));
+    saveTraceButton.textContent = editingTraceId ? "落笔" : "让这一刻留在园里";
+    if (editingTraceId) saveTraceButton.setAttribute("aria-label", "落笔，保存这一刻的改动");
+    else saveTraceButton.removeAttribute("aria-label");
+    editCancel.hidden = !editingTraceId;
+    recordReturn.dataset.go = editingFromGarden ? "garden" : "entry";
+    recordReturn.innerHTML = editingFromGarden
+      ? '<span aria-hidden="true">← </span>回到我的园'
+      : '<span aria-hidden="true">← </span>回到园门';
+    note.hidden = false;
+    placedWriting.hidden = true;
+    placedWriting.textContent = "";
+    recordReceived.hidden = true;
+    saveTraceButton.hidden = false;
 
-    if (options.fresh) {
+    if (options.fresh && !editingTraceId) {
       note.value = "";
+      selectedPlant = null;
+      syncPlantSelection();
       clearDraft();
     } else {
       note.value = readDraft();
-      if (note.value.trim()) setDraftStatus("草稿还在这里");
+      setDraftStatus(note.value && note.value !== editingOriginalText ? "刚才写下的，还在这里" : "");
     }
 
     updateWritingState({ silent: true });
+    requestAnimationFrame(alignPlantCopy);
+    recordView.querySelector(".record-space").scrollTop = 0;
 
     if (window.matchMedia("(pointer: fine)").matches) {
       setTimeout(() => note.focus({ preventScroll: true }), 520);
@@ -1583,32 +1695,184 @@
 
   function saveTrace() {
     if (isSavingTrace) return;
-    const content = note.value.trim();
-    if (!content) return;
+    const content = note.value;
+    if ((!content.trim() && !selectedPlant) || isComposingNote) return;
 
     const traces = read(STORAGE.traces);
-    const trace = {
+    const existingIndex = editingTraceId ? traces.findIndex((trace) => trace.id === editingTraceId) : -1;
+    if (editingTraceId && existingIndex < 0) {
+      setDraftStatus("园里暂时找不到这一刻，改过的文字仍在这里。");
+      return;
+    }
+    const isRevision = existingIndex >= 0;
+    // 未改字也可以结束修改，但不制造一次虚假的修改时间。
+    if (isRevision && content === String(traces[existingIndex].note || "")
+      && selectedPlant === validPlant(traces[existingIndex].plant)) {
+      clearDraft();
+      showPlacedWriting(traces[existingIndex]);
+      return;
+    }
+    const trace = isRevision ? {
+      ...traces[existingIndex],
+      note: content,
+      plant: selectedPlant,
+      updatedAt: new Date().toISOString(),
+    } : {
       id: createId("trace"),
       expression: "一枚种子",
       kind: "seed",
       note: content,
+      plant: selectedPlant,
       stage: "seed",
       createdAt: new Date().toISOString(),
     };
-    traces.unshift(trace);
-    if (!write(STORAGE.traces, traces)) return;
+    if (isRevision) traces[existingIndex] = trace;
+    else traces.unshift(trace);
+    if (!write(STORAGE.traces, traces)) {
+      setDraftStatus("这一刻还没能留进园里，写下的话仍在这里。请稍后再试。");
+      return;
+    }
 
     isSavingTrace = true;
     clearDraft();
-    track("trace_saved", {
+    track(isRevision ? "trace_updated" : "trace_saved", {
       kind: trace.kind,
       noteLength: trace.note.length,
     });
-    setArrival({ saved: true, trace });
-    recordView.classList.add("is-releasing");
+    showPlacedWriting(trace, !isRevision);
+  }
 
-    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    setTimeout(() => navigate("arrival", { recordFinalized: true }), reducedMotion ? 40 : 920);
+  function showPlacedWriting(trace, firstPlacement = false) {
+    setPlantSpaceOpen(false);
+    recordView.classList.remove("is-editing");
+    isSavingTrace = true;
+    placedTraceId = trace.id;
+    const content = String(trace.note || "");
+    placedWriting.textContent = content;
+    const placedPlant = document.querySelector("#record-placed-plant");
+    placedPlant.textContent = validPlant(trace.plant) || "";
+    placedPlant.hidden = !validPlant(trace.plant);
+    placedWriting.hidden = false;
+    note.hidden = true;
+    note.blur();
+    writingCount.hidden = true;
+    saveTraceButton.disabled = true;
+    saveTraceButton.hidden = true;
+    editCancel.hidden = true;
+    recordReceived.hidden = false;
+    recordReceived.querySelector("[role='status']").hidden = !firstPlacement;
+    recordReceived.classList.toggle("is-revision", !firstPlacement);
+    placedWriting.tabIndex = 0;
+    placedWriting.setAttribute("role", "button");
+    placedWriting.setAttribute("aria-label", "修改这一刻的文字");
+    recordView.classList.add("is-placed");
+  }
+
+  function editPlacedWriting() {
+    const space = recordView.querySelector(".record-space");
+    const previousScroll = space.scrollTop;
+    const trace = read(STORAGE.traces).find((item) => item.id === placedTraceId);
+    if (!trace) return;
+    editingTraceId = trace.id;
+    editingOriginalText = String(trace.note || "");
+    isSavingTrace = false;
+    isComposingNote = false;
+    recordView.classList.add("is-editing");
+    recordView.classList.remove("is-placed");
+    placedWriting.hidden = true;
+    document.querySelector("#record-placed-plant").hidden = true;
+    recordReceived.hidden = true;
+    note.hidden = false;
+    note.value = readDraft();
+    saveTraceButton.hidden = false;
+    saveTraceButton.textContent = "落笔";
+    saveTraceButton.setAttribute("aria-label", "落笔，保存这一刻的改动");
+    editCancel.hidden = false;
+    updateWritingState({ silent: true });
+    note.focus({ preventScroll: true });
+    requestAnimationFrame(() => { space.scrollTop = previousScroll; });
+  }
+
+  function openGardenMoment() {
+    const trace = getGardenRecords().find((item) => item.id === gardenRecordTraceId);
+    if (!trace) return;
+    openedMomentId = trace.id;
+    const model = getGardenRecordModel(trace);
+    momentDialog.classList.toggle("is-plant-only", !String(trace.note || "").trim() && !!validPlant(trace.plant));
+    document.querySelector("#garden-moment-body").textContent = trace.note || model.event;
+    const momentPlant = document.querySelector("#garden-moment-plant");
+    momentPlant.textContent = validPlant(trace.plant) || "";
+    momentPlant.hidden = !validPlant(trace.plant);
+    const date = document.querySelector("#garden-moment-date");
+    date.textContent = formatGardenRecordDate(trace.createdAt);
+    date.dateTime = trace.createdAt;
+    document.querySelector("#garden-moment-edit").hidden = !String(trace.note || "").trim() && !validPlant(trace.plant);
+    gardenRecordMore.open = false;
+    momentDialog.showModal();
+  }
+
+  function editGardenMoment(id) {
+    if (momentDialog.open) momentDialog.close();
+    navigate("record", { editTraceId: id, fromGarden: true });
+  }
+
+  function alignPlantCopy() {
+    if (currentView !== "record") return;
+    const aside = plantToggle.closest(".record-plants");
+    const copy = plantSpace.querySelector(".plant-space-copy");
+    aside.style.top = "";
+    copy.style.marginTop = "";
+    if (window.matchMedia("(max-width: 720px)").matches || recordView.classList.contains("is-placed")) return;
+    const bottom = (element) => {
+      const range = document.createRange();
+      range.selectNodeContents(element);
+      return range.getBoundingClientRect().bottom;
+    };
+    const label = document.querySelector("#plant-toggle-label");
+    aside.style.top = (aside.offsetTop + bottom(document.querySelector("#record-title")) - bottom(label)) + "px";
+    if (!plantSpace.hidden) {
+      const margin = parseFloat(getComputedStyle(copy).marginTop);
+      copy.style.marginTop = Math.max(0, margin + bottom(recordView.querySelector(".record-invitation")) - bottom(copy)) + "px";
+    }
+  }
+
+  function setPlantSpaceOpen(open) {
+    clearTimeout(plantSettleTimer);
+    clearTimeout(plantCloseTimer);
+    plantSpace.classList.remove("is-settling");
+    destroyPlantGrowth?.();
+    destroyPlantGrowth = null;
+    plantToggle.closest(".record-plants").classList.toggle("plant-space-is-open", open);
+    plantToggle.setAttribute("aria-expanded", String(open));
+    plantSpace.hidden = !open;
+    requestAnimationFrame(alignPlantCopy);
+    if (open) {
+      destroyPlantGrowth = window.YinPlantGrowth.mount(plantGrowthRoot, {
+        immediate: plantGrowthSeen,
+        selected: selectedPlant,
+        onSelect: (name) => {
+          selectedPlant = validPlant(name);
+          syncPlantSelection();
+          updateWritingState({ silent: true });
+          saveDraft();
+          clearTimeout(plantSettleTimer);
+          clearTimeout(plantCloseTimer);
+          plantSpace.classList.remove("is-settling");
+          if (selectedPlant) {
+            const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+            plantSettleTimer = setTimeout(() => {
+              plantSpace.classList.add("is-settling");
+              plantCloseTimer = setTimeout(() => {
+                const restoreFocus = plantSpace.contains(document.activeElement);
+                setPlantSpaceOpen(false);
+                if (restoreFocus) plantToggle.focus({ preventScroll: true });
+              }, reduced ? 0 : 500);
+            }, 400);
+          }
+        },
+      });
+      plantGrowthSeen = true;
+    }
   }
 
   function setArrival({ saved, trace = null }) {
@@ -1698,7 +1962,7 @@
         kind: "园中一刻",
         quote: noteText,
         event: "",
-        relation,
+        relation: !noteText && validPlant(trace.plant) ? "" : relation,
         place: "",
       };
     }
@@ -1731,14 +1995,17 @@
   }
 
   function getGardenRecords() {
+    if (new URLSearchParams(window.location.search).get("preview") === "garden-empty") return [];
     return read(STORAGE.traces).filter((trace) =>
       ["stone", "hover", "water", "seed"].includes(trace.kind) && trace.createdAt
+      && (String(trace.note || "").trim() || validPlant(trace.plant))
     );
   }
 
   function renderGardenRecord(options = {}) {
     if (!gardenRecordEmpty || !gardenRecordContent) return;
     const records = getGardenRecords();
+    document.querySelector("#garden-stack-viewport").classList.toggle("is-empty", !records.length);
 
     if (!records.length) {
       gardenRecordTraceId = null;
@@ -1768,10 +2035,24 @@
     gardenRecordKind.textContent = model.kind;
     gardenRecordQuote.textContent = model.quote;
     gardenRecordQuote.hidden = !model.quote;
+    gardenRecordQuote.tabIndex = model.quote ? 0 : -1;
+    gardenRecordQuote.setAttribute("role", "button");
+    gardenRecordQuote.setAttribute("aria-label", "看看这一刻的完整内容");
+    document.querySelector("#garden-record-edit").hidden = !model.quote && !validPlant(trace.plant);
+    const cardPlant = document.querySelector("#garden-record-plant");
+    cardPlant.textContent = validPlant(trace.plant) || "";
+    cardPlant.hidden = !validPlant(trace.plant);
+    const plantOnly = !String(trace.note || "").trim() && !!validPlant(trace.plant);
+    gardenRecordContent.classList.toggle("is-plant-only", plantOnly);
     gardenRecordEvent.textContent = model.event;
     gardenRecordEvent.hidden = !model.event;
-    gardenRecordRelation.textContent = model.relation;
-    gardenRecordRelation.hidden = !model.relation;
+    gardenRecordRelation.textContent = "";
+    gardenRecordRelation.hidden = true;
+    if (plantOnly) {
+      gardenRecordQuote.hidden = true;
+      gardenRecordEvent.hidden = true;
+      gardenRecordRelation.hidden = true;
+    }
     gardenRecordDate.dateTime = trace.createdAt;
     gardenRecordDate.textContent = formatGardenRecordDate(trace.createdAt);
     gardenRecordPlace.textContent = model.place;
@@ -1788,7 +2069,7 @@
     const traces = read(STORAGE.traces);
     gardenList.replaceChildren();
     renderGardenRecord(options);
-    const stones = traces.filter((trace) => ["stone", "hover", "water"].includes(trace.kind));
+    const stones = [];
     window.YinGarden3D?.setTraces(stones);
     stones.forEach((trace) => {
       const access = document.createElement("button");
@@ -1974,7 +2255,7 @@
   leaveWithoutTraceButton.addEventListener("click", leaveHoverWithoutTrace);
   reflectionBackButton?.addEventListener("click", returnToHoverFromReflection);
   memoryCardClose?.addEventListener("click", closeMemoryCard);
-  hoverWritePlace?.addEventListener("click", openPlaceWriting);
+  hoverWritePlace?.addEventListener("click", () => navigate("record"));
   placeWritingClose?.addEventListener("click", closePlaceWriting);
   placeWritingSave?.addEventListener("click", () => leavePlaceMemory(true));
   placeWritingSkip?.addEventListener("click", () => leavePlaceMemory(false));
@@ -2228,6 +2509,76 @@
   });
 
   document.querySelector("#save-trace").addEventListener("click", saveTrace);
+  plantToggle.addEventListener("click", () => setPlantSpaceOpen(plantSpace.hidden));
+  document.querySelector("#record-placed-plant").addEventListener("click", editPlacedWriting);
+  document.querySelector("#garden-record-plant").addEventListener("click", openGardenMoment);
+  placedWriting.addEventListener("click", editPlacedWriting);
+  placedWriting.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    editPlacedWriting();
+  });
+  editCancel.addEventListener("click", () => {
+    const trace = read(STORAGE.traces).find((item) => item.id === editingTraceId);
+    if (!trace) return;
+    clearDraft();
+    selectedPlant = validPlant(trace.plant);
+    syncPlantSelection();
+    note.value = String(trace.note || "");
+    showPlacedWriting(trace);
+  });
+  gardenRecordQuote.addEventListener("click", openGardenMoment);
+  gardenRecordQuote.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    openGardenMoment();
+  });
+  document.querySelector("#garden-record-open").addEventListener("click", openGardenMoment);
+  document.querySelector("#garden-record-times-open").addEventListener("click", () => {
+    const trace = getGardenRecords().find((item) => item.id === gardenRecordTraceId);
+    if (!trace) return;
+    const created = document.querySelector("#moment-time-created");
+    created.textContent = formatGardenRecordDate(trace.createdAt);
+    created.dateTime = trace.createdAt;
+    const updated = document.querySelector("#moment-time-updated");
+    document.querySelector("#moment-time-updated-row").hidden = !trace.updatedAt;
+    updated.textContent = trace.updatedAt ? formatGardenRecordDate(trace.updatedAt) : "";
+    if (trace.updatedAt) updated.dateTime = trace.updatedAt;
+    else updated.removeAttribute("datetime");
+    gardenRecordMore.open = false;
+    document.querySelector("#moment-times-dialog").showModal();
+  });
+  document.querySelector("#moment-times-close").addEventListener("click", () => {
+    document.querySelector("#moment-times-dialog").close();
+  });
+  document.querySelector("#garden-record-edit").addEventListener("click", () => editGardenMoment(gardenRecordTraceId));
+  document.querySelector("#garden-moment-edit").addEventListener("click", () => editGardenMoment(openedMomentId));
+  document.querySelector("#garden-moment-close").addEventListener("click", () => momentDialog.close());
+  // 只把卡片外的一次点击视作收起；从正文拖选到外面时不误关闭。
+  let momentPointerStartedOutside = false;
+  const isOutsideMoment = (event) => {
+    const bounds = momentDialog.getBoundingClientRect();
+    return event.target === momentDialog
+      && (event.clientX < bounds.left || event.clientX > bounds.right
+        || event.clientY < bounds.top || event.clientY > bounds.bottom);
+  };
+  momentDialog.addEventListener("pointerdown", (event) => {
+    momentPointerStartedOutside = event.button === 0 && isOutsideMoment(event);
+  });
+  momentDialog.addEventListener("click", (event) => {
+    const shouldClose = momentPointerStartedOutside && isOutsideMoment(event);
+    momentPointerStartedOutside = false;
+    if (shouldClose) momentDialog.close();
+  });
+  momentDialog.addEventListener("pointercancel", () => { momentPointerStartedOutside = false; });
+  momentDialog.addEventListener("close", () => { momentPointerStartedOutside = false; });
+  window.addEventListener("pagehide", () => {
+    setPlantSpaceOpen(false);
+    if (currentView === "record" && !isSavingTrace) saveDraft();
+  });
+  document.querySelector("#record-garden-link").addEventListener("click", () => {
+    navigate("garden", { recordFinalized: true, newTraceId: placedTraceId });
+  });
   gardenWindAudio.addEventListener("timeupdate", updateGardenSoundScene);
   gardenWindAudio.addEventListener("seeked", updateGardenSoundScene);
   gardenWindAudio.loop = true;
@@ -2243,7 +2594,22 @@
   arrivalSecondary.addEventListener("click", () => navigate("record", { fresh: true }));
   document.querySelector("#feedback-form").addEventListener("submit", submitFeedback);
   note.addEventListener("input", updateWritingState);
+  note.addEventListener("keyup", (event) => {
+    if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) {
+      keepWritingCaretVisible();
+    }
+  });
+  note.addEventListener("compositionstart", () => {
+    isComposingNote = true;
+    saveTraceButton.disabled = true;
+  });
+  note.addEventListener("compositionend", () => {
+    isComposingNote = false;
+    updateWritingState();
+  });
   window.addEventListener("resize", resizeWritingField);
+  window.addEventListener("resize", () => requestAnimationFrame(alignPlantCopy));
+  document.fonts?.ready.then(() => requestAnimationFrame(alignPlantCopy));
 
   document.querySelector("#export-research").addEventListener("click", downloadResearch);
   document.querySelector("#reset-research").addEventListener("click", resetResearch);
@@ -2287,4 +2653,7 @@
   renderGarden();
   track("prototype_loaded", { researchMode });
   navigate("entry", { silent: true });
+  if (new URLSearchParams(window.location.search).get("preview") === "garden-empty") {
+    navigate("garden", { silent: true });
+  }
 })();

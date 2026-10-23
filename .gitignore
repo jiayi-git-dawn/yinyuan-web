@@ -40,9 +40,11 @@ assets/*
 !assets/yinyuan-water-loop-v1.mp4
 !assets/yinyuan-water-night-loop-v1.mp4
 !assets/yinyuan-water-soft3-clean-v4.wav
+!assets/yinyuan-water-user-seamless-v7-speaker.wav
 
 # Local visual exports and review captures; production assets live under assets/
 /yinyuan-*.png
+/tmp-empty-card-preview.png
 /隐园水边-*.wav
 
 # Local environment files and credentials

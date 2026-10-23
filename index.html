@@ -31,9 +31,11 @@
           requestedLight === "day" || requestedLight === "night"
             ? requestedLight
             : automaticLight;
+
       })();
     </script>
     <link rel="stylesheet" href="./styles.css?v=20261004-writing-sound-v2" />
+    <link rel="stylesheet" href="./plant-growth.css?v=20261022" />
   </head>
   <body>
     <aside class="landscape-gate" aria-label="横屏体验提示">
@@ -111,8 +113,8 @@
 
         <div class="entry-copy entry-copy--restored">
           <p class="eyebrow">不必赶路，也不必回答</p>
-          <h1 id="entry-title">在喧嚣之外，<br />留一座园给自己。</h1>
-          <p class="lead">先在园门前停一停。想往里走时，园就在这里。</p>
+          <h1 id="entry-title">在喧嚣之外，<br />留一座园给自己</h1>
+          <p class="lead">先在园门前停一停。想往里走时，园就在这里</p>
 
           <div class="entry-actions" aria-label="你现在可以">
             <button class="entry-action entry-action--primary" id="pause-at-gate" type="button">
@@ -123,7 +125,7 @@
               留下一念
             </button>
           </div>
-          <p class="entry-privacy">写下的内容，只留在这台浏览器里。</p>
+          <p class="entry-privacy">写下的内容，只留在这台浏览器里</p>
         </div>
 
         <div class="entry-footnote" id="entry-footnote" data-copy-track aria-label="隐园的三句话">
@@ -166,14 +168,14 @@
 
           <section class="hover-reflection" id="hover-reflection" aria-labelledby="hover-reflection-title" hidden>
             <p class="eyebrow">离开前</p>
-            <h2 id="hover-reflection-title">这一刻已经发生了。</h2>
+            <h2 id="hover-reflection-title">这一刻已经发生了</h2>
             <p class="reflection-copy">不必说明它，也不必证明自己有所改变。</p>
             <div class="hover-choice-actions" aria-label="离开悬停时刻">
-              <button class="button button-quiet place-stone" id="place-stone" type="button">
+              <button class="button button-quiet place-stone" id="place-stone" type="button" hidden>
                 放下一颗小石头
               </button>
               <button class="skip-reflection text-button" id="leave-without-trace" type="button">
-                就这样离开
+                离开
               </button>
             </div>
             <button class="reflection-back text-button" id="reflection-back" type="button">
@@ -271,7 +273,7 @@
           id="garden-wind-audio"
           src="./assets/bamboo-courtyard-east-lake-v11-web.wav"
           data-garden-src="./assets/bamboo-courtyard-east-lake-v11-web.wav"
-          data-water-src="./assets/yinyuan-water-soft3-clean-v4.wav"
+          data-water-src="./assets/yinyuan-water-user-seamless-v7-speaker.wav"
           preload="none"
           loop
         ></audio>
@@ -280,14 +282,14 @@
       <section class="view record-view" data-view="record" aria-labelledby="record-title" hidden>
         <div class="record-space">
           <div class="record-heading">
-            <h2 id="record-title">此刻，<br /><span>有什么正在心里流动？</span></h2>
+            <h2 id="record-title">写下此刻</h2>
             <p class="record-invitation">
-              一个词、一句话，<br />或一段还没有想清楚的话，都可以。
+              不必急着说清楚，先从你愿意留下的一点开始。
             </p>
           </div>
 
-          <label class="writing-field" for="trace-note">
-            <span class="visually-hidden">写下此刻正在心里流动的内容</span>
+          <div class="writing-field">
+            <label class="visually-hidden" for="trace-note">写下此刻正在心里流动的内容</label>
             <textarea
               id="trace-note"
               rows="1"
@@ -295,24 +297,57 @@
               placeholder="从这里开始……"
               autocomplete="off"
             ></textarea>
-            <span class="writing-line" aria-hidden="true"></span>
-          </label>
+            <p class="placed-writing" id="placed-writing" hidden></p>
+            <span class="placed-edit-hint" aria-hidden="true">修改</span>
+          </div>
 
+          <div class="writing-plant-companion">
+            <p class="plant-selection-summary" id="plant-selection-summary" hidden></p>
+            <button class="record-placed-plant text-button" id="record-placed-plant" type="button" aria-label="修改这一刻的植物与文字" hidden></button>
+          </div>
           <div class="record-status-row">
             <p class="draft-status" id="draft-status" role="status" aria-live="polite"></p>
             <p class="writing-count" id="writing-count" hidden><span id="note-count">0</span>/2000</p>
           </div>
 
-          <div class="record-actions" id="record-actions" aria-hidden="true">
-            <button class="button button-primary" id="save-trace" type="button">让它落进园里</button>
-          </div>
+          <aside class="record-plants" aria-label="文字之外的植物">
+            <button class="plant-toggle text-button" id="plant-toggle" type="button" aria-expanded="false" aria-controls="plant-space">
+              <span id="plant-toggle-label">文字之外</span>
+              <span class="plant-toggle-curve" aria-hidden="true">
+                <svg viewBox="0 0 44 22" focusable="false">
+                  <path d="M 3 7 C 10 4, 13 6, 18 10 C 23 14, 28 17, 33 14 C 36 12, 38 12, 41 13" />
+                </svg>
+              </span>
+            </button>
+            <div class="plant-space" id="plant-space" hidden>
+              <p class="plant-space-copy">有些感受，也可以借植物留下。</p>
+              <div class="nature-module" id="writing-plant-growth">
+                <svg class="vine-svg" viewBox="0 0 300 500" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+                  <g class="vine-sway">
+                    <path class="vine-stem" d=""/>
+                    <g data-tendril-layer></g>
+                    <g data-leaf-layer></g>
+                  </g>
+                </svg>
+                <div class="plant-list" aria-label="植物名称"></div>
+              </div>
+            </div>
+          </aside>
 
-          <button class="record-hover-link text-button" type="button" data-go="hover">
-            还不想写<span aria-hidden="true"> · </span>回园里坐一会
-          </button>
         </div>
-
-        <button class="exit-link text-button" type="button" data-go="entry">暂时离开</button>
+          <div class="record-actions" id="record-actions">
+            <button class="record-hover-link text-button" type="button" data-go="entry">
+              <span aria-hidden="true">← </span>回到园门
+            </button>
+            <div class="record-save-controls">
+              <button class="record-edit-cancel text-button cancel-btn" id="record-edit-cancel" type="button" aria-label="作罢，放弃这次改动并保留原文" hidden>作罢</button>
+              <button class="record-place-link text-button" id="save-trace" type="button" disabled>让这一刻留在园里</button>
+              <div class="record-received" id="record-received" hidden>
+                <p role="status">园听见了，也收下了这一刻。</p>
+                <button class="record-garden-link text-button" id="record-garden-link" type="button">去我的园看看</button>
+              </div>
+            </div>
+          </div>
       </section>
 
       <section class="view arrival-view" data-view="arrival" aria-labelledby="arrival-title" hidden>
@@ -338,20 +373,18 @@
         <div class="garden-memory-stage">
           <header class="garden-page-intro">
             <p class="garden-page-kicker">
-              <span>我的园</span>
-              <span class="garden-page-kicker-dot" aria-hidden="true">·</span>
               <span>专属于这台浏览器</span>
             </p>
-            <h2 id="garden-title">园替你收着</h2>
-            <p>每一次停下，都不必成为答案。</p>
+            <h2 id="garden-title">我的园</h2>
+            <p>你曾停留的时刻，仍留在园中。</p>
           </header>
 
           <div class="garden-stack-viewport" id="garden-stack-viewport" tabindex="0" aria-label="上下滚动浏览园中时刻">
             <section class="garden-heading garden-journal-card" id="garden-record-card" aria-live="polite">
 
           <div class="garden-record-empty" id="garden-record-empty" hidden>
-              <p class="garden-record-kicker">园中还很安静</p>
-            <p class="garden-empty-title">园里还没有留下什么。</p>
+            <p class="garden-record-kicker">园中还很安静</p>
+            <p class="garden-empty-title">这里还空着，不必急着留下些什么</p>
             <p class="garden-empty-copy">你可以先去停一会，<br />也可以写下此刻。</p>
             <div class="garden-empty-actions">
               <button class="button button-primary" type="button" data-go="hover">去园里停一会</button>
@@ -371,21 +404,30 @@
 
             <blockquote class="garden-record-quote" id="garden-record-quote" hidden></blockquote>
             <p class="garden-record-event" id="garden-record-event"></p>
-            <p class="garden-record-relation" id="garden-record-relation" hidden></p>
-
+            <div class="garden-record-context">
+              <p class="garden-record-relation" id="garden-record-relation" hidden></p>
+              <button class="moment-plant-label text-button" id="garden-record-plant" type="button" aria-label="看看这一刻的植物与文字" hidden></button>
+            </div>
             <footer class="garden-record-footer">
-              <time id="garden-record-date"></time>
-              <span class="garden-record-place" id="garden-record-place" hidden></span>
-            </footer>
-
-            <details class="garden-record-more" id="garden-record-more">
+              <div class="garden-record-origin">
+                <time id="garden-record-date"></time>
+                <span class="garden-record-place" id="garden-record-place" hidden></span>
+              </div>
+              <details class="garden-record-more" id="garden-record-more">
               <summary>更多</summary>
-              <button class="text-button" id="garden-record-delete" type="button">移出我的园</button>
-            </details>
+              <div class="garden-record-more-items">
+                <button class="text-button" id="garden-record-open" type="button">看看这一刻</button>
+                <button class="text-button" id="garden-record-edit" type="button">修改这一刻</button>
+                <button class="text-button" id="garden-record-times-open" type="button">留下的时间</button>
+                <button class="text-button" id="garden-record-delete" type="button">移出我的园</button>
+              </div>
+              </details>
+            </footer>
               </article>
             </section>
           </div>
           <p class="garden-scroll-cue" id="garden-scroll-cue">轻轻滚动，走回更早的时刻</p>
+          <button class="garden-return-gate text-button" id="garden-return-stay" type="button" data-go="hover" hidden></button>
           <button class="garden-return-gate text-button" type="button" data-go="entry">
             <span aria-hidden="true">←</span> 回到园门
           </button>
@@ -436,6 +478,30 @@
         </form>
       </section>
     </main>
+
+    <dialog class="garden-moment-dialog" id="garden-moment-dialog" aria-labelledby="garden-moment-title">
+      <header>
+        <h2 id="garden-moment-title">园中时刻</h2>
+        <button class="text-button" id="garden-moment-close" type="button" aria-label="关闭这一刻">关闭</button>
+      </header>
+      <p class="garden-moment-body" id="garden-moment-body"></p>
+      <p class="moment-plant-label" id="garden-moment-plant" hidden></p>
+      <footer>
+        <time id="garden-moment-date"></time>
+        <button class="text-button" id="garden-moment-edit" type="button">修改这一刻</button>
+      </footer>
+    </dialog>
+
+    <dialog class="garden-moment-dialog moment-times-dialog" id="moment-times-dialog" aria-labelledby="moment-times-title">
+      <header>
+        <h2 id="moment-times-title">留下的时间</h2>
+        <button class="text-button" id="moment-times-close" type="button" aria-label="关闭时间信息">关闭</button>
+      </header>
+      <dl class="moment-time-list">
+        <div><dt>最初留下</dt><dd><time id="moment-time-created"></time></dd></div>
+        <div id="moment-time-updated-row" hidden><dt>最近修改</dt><dd><time id="moment-time-updated"></time></dd></div>
+      </dl>
+    </dialog>
 
     <aside class="research-panel" id="research-panel" hidden aria-labelledby="research-title">
       <div class="research-heading">
@@ -503,6 +569,7 @@
 
     <script src="./config.js?v=20260814-feishu-guide-v36"></script>
     <script src="./water-scene.js?v=20261002-water-video-v1" defer></script>
+    <script src="./plant-growth.js?v=20261022" defer></script>
     <script src="./app.js?v=20261004-writing-sound-v2" defer></script>
   </body>
 </html>
