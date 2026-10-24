@@ -3946,6 +3946,10 @@ body.garden-3d-is-ready .garden-photo-fallback { display: none !important; }
 .hover-intro h2 { color: rgba(247,245,231,.98) !important; text-shadow: 0 3px 22px rgba(2,8,6,.9); }
 .hover-intro .eyebrow,
 .hover-invitation { color: rgba(238,236,218,.84) !important; }
+.hover-intro { text-align: center; }
+.hover-intro .eyebrow { text-indent: .23em; }
+/* Hang the final full-width stop so the visible text shares the same axis. */
+.hover-intro .hover-ending { display: inline-block; width: 0; overflow: visible; }
 html[data-light="day"] .hover-intro h2 { color: #fbf8ea !important; }
 html[data-light="day"] .hover-intro .eyebrow,
 html[data-light="day"] .hover-invitation { color: rgba(255,252,236,.9) !important; }
@@ -5799,6 +5803,7 @@ html[data-light="night"] .entry-privacy {
 }
 
 /* 已经存在的蒲公英留在地面，仅有两颗种子极偶尔离开。 */
+body[data-view="entry"] .ambient-scene > .seed { display: none; }
 .entry-dandelion-seeds {
   position: absolute;
   z-index: 3;
@@ -5817,7 +5822,9 @@ html[data-light="night"] .entry-privacy {
   background: rgba(247, 245, 227, .75);
   box-shadow: 0 0 7px rgba(248, 246, 231, .24);
   opacity: 0;
-  animation: entry-seed-drift 31s cubic-bezier(.3, .05, .3, 1) 7s infinite;
+  will-change: transform, opacity;
+  animation: entry-seed-drift 31s linear 7s infinite,
+    entry-seed-visibility 31s linear 7s infinite;
 }
 
 .entry-dandelion-seeds i::before,
@@ -5837,16 +5844,18 @@ html[data-light="night"] .entry-privacy {
 .entry-dandelion-seeds i:nth-child(2) {
   left: 44%;
   top: 94%;
-  animation-duration: 37s;
   animation-delay: 20s;
 }
 
 @keyframes entry-seed-drift {
-  0%, 67% { opacity: 0; transform: translate3d(0, 0, 0) rotate(0); }
-  70% { opacity: .7; }
-  82% { opacity: .62; transform: translate3d(7vw, -16vh, 0) rotate(92deg); }
-  94% { opacity: .12; transform: translate3d(13vw, -29vh, 0) rotate(176deg); }
-  100% { opacity: 0; transform: translate3d(15vw, -33vh, 0) rotate(210deg); }
+  from { transform: translate3d(0, 0, 0) rotate(0); }
+  to { transform: translate3d(15vw, -33vh, 0) rotate(210deg); }
+}
+@keyframes entry-seed-visibility {
+  0%, 100% { opacity: 0; }
+  8% { opacity: .65; }
+  70% { opacity: .55; }
+  94% { opacity: 0; }
 }
 
 html[data-light="night"] .entry-view .entry-footnote {
