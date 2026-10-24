@@ -5802,7 +5802,7 @@ html[data-light="night"] .entry-privacy {
   transform: scale(.94);
 }
 
-/* 已经存在的蒲公英留在地面，仅有两颗种子极偶尔离开。 */
+/* 每次一颗，飞行 14 秒后留白 20 秒；初次仍等待 7 秒。 */
 body[data-view="entry"] .ambient-scene > .seed { display: none; }
 .entry-dandelion-seeds {
   position: absolute;
@@ -5823,8 +5823,8 @@ body[data-view="entry"] .ambient-scene > .seed { display: none; }
   box-shadow: 0 0 7px rgba(248, 246, 231, .24);
   opacity: 0;
   will-change: transform, opacity;
-  animation: entry-seed-drift 14s linear 7s infinite,
-    entry-seed-visibility 14s linear 7s infinite;
+  animation: entry-seed-drift 34s linear 7s infinite,
+    entry-seed-visibility 34s linear 7s infinite;
 }
 
 .entry-dandelion-seeds i::before,
@@ -5841,21 +5841,15 @@ body[data-view="entry"] .ambient-scene > .seed { display: none; }
 }
 
 .entry-dandelion-seeds i::after { transform: rotate(18deg); }
-.entry-dandelion-seeds i:nth-child(2) {
-  left: 44%;
-  top: 94%;
-  animation-delay: 20s;
-}
-
 @keyframes entry-seed-drift {
-  from { transform: translate3d(0, 0, 0) rotate(0); }
-  to { transform: translate3d(15vw, -33vh, 0) rotate(210deg); }
+  0% { transform: translate3d(0, 0, 0) rotate(0); }
+  41.1764705882%, 100% { transform: translate3d(15vw, -33vh, 0) rotate(210deg); }
 }
 @keyframes entry-seed-visibility {
   0%, 100% { opacity: 0; }
-  8% { opacity: .65; }
-  70% { opacity: .55; }
-  94% { opacity: 0; }
+  3.2941176471% { opacity: .65; }
+  28.8235294118% { opacity: .55; }
+  38.7058823529% { opacity: 0; }
 }
 
 html[data-light="night"] .entry-view .entry-footnote {
