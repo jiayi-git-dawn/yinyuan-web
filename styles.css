@@ -7512,11 +7512,11 @@ html[data-light="night"] body[data-view="garden"] .garden-3d-root[data-place="wa
   opacity: 0;
   pointer-events: none;
   background: #13211c;
-  transition: opacity 900ms cubic-bezier(.32, .72, .2, 1);
+  transition: opacity 450ms cubic-bezier(.32, .72, .2, 1);
 }
 
-body[data-view="hover"] .garden-3d-root[data-place="water"].water-video-active .garden-water-video,
-body[data-view="garden"] .garden-3d-root[data-place="water"].water-video-active .garden-water-video {
+body[data-view="hover"] .garden-3d-root[data-place="water"].water-video-active .garden-water-video.is-current,
+body[data-view="garden"] .garden-3d-root[data-place="water"].water-video-active .garden-water-video.is-current {
   opacity: 1;
 }
 

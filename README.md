@@ -82,8 +82,9 @@ python -m http.server 4173
 
 ## 水边与原地书写修复（2026-10-23）
 
-- 日间使用 `yinyuan-water-day-loop-v2.mp4`，夜间使用 `yinyuan-water-night-loop-v3.mp4`，均为 1280×720、25fps、无声视频。首尾顺向叠化、稳定岸边，合成约 20 秒的连续流以减少浏览器循环寻帧。视频首帧和底图匹配，只在解码就绪后显示视频，循环时不撤下可见画面。
+- 日间使用 `yinyuan-water-day-loop-v2.mp4`，夜间使用 `yinyuan-water-night-loop-v4.mp4`，均为 1280×720、25fps、无声视频。首尾顺向叠化、稳定岸边，合成约 20 秒的连续流以减少浏览器循环寻帧。夜间增加循环时间滤波，减轻反光跳动，首帧仍匹配夜间底图。进入水边后日夜各加载一次，各自保留播放位置；目标解码后再叠化，过渡结束暂停另一层，连续切换不再更换播放中元素的 src。
 - 夜景通过 built-in imagegen 对日间首帧调整光线，提示词与素材路径见 `scripts/water-night-relight-prompt.txt`；夜间运动来自日间水流，不沿用草木不一致的旧夜间视频。`prepare-water-video-loop.py` 生成日间循环，`match-night-water-video.py` 生成对应夜景，需要 FFmpeg、numpy、Pillow。
 - 水声保留原素材，仅将默认增益从 0.92 调整至 0.32（约降低 9dB），继续手动开启，不随视频自动出声。不同耳机、外放设备的实际音量仍需分别体验。
+- 手机优先使用与园声相同的媒体元素播放 `yinyuan-water-mobile-v1.m4a`（AAC，128kbps，音量已乘 0.32），点击时立即 play，不等待 metadata 或 Web Audio 解码。手机园声/水声互切不经过延迟淡出，保留手势权限。生成命令：`ffmpeg -i assets/yinyuan-water-user-seamless-v7-speaker.wav -af volume=0.32 -c:a aac -b:a 128k -movflags +faststart assets/yinyuan-water-mobile-v1.m4a`。模拟设备无法代替实机微信/Safari 最终试听。
 - 手机关闭环境自动飘种和长按散种，水边所有设备均不散种；不影响主动书写时选择植物。
 - 「留一句在这里」恢复原地小卡片，不跳整页；保存为当前「我的园」支持的文字记录，取消或关闭保留未保存文字。移除该卡片及入园说明中的石头选项和旧文案，不删除历史记录。

@@ -58,14 +58,16 @@
   const soundToggle = document.querySelector("#sound-toggle");
   const soundLabel = document.querySelector("#sound-label");
   const gardenWindAudio = document.querySelector("#garden-wind-audio");
+  const useMobileWaterMedia = window.matchMedia("(pointer: coarse), (hover: none)").matches;
   const SOUND_SCENES = {
     garden: {
       src: gardenWindAudio?.dataset.gardenSrc || gardenWindAudio?.getAttribute("src") || "",
       volume: 0.92,
     },
     water: {
-      src: gardenWindAudio?.dataset.waterSrc || "",
-      volume: 0.32,
+      src: (useMobileWaterMedia ? gardenWindAudio?.dataset.waterMobileSrc : gardenWindAudio?.dataset.waterSrc) || "",
+      // Mobile Safari ignores element volume: the mobile file is pre-attenuated.
+      volume: useMobileWaterMedia ? 1 : 0.32,
     },
   };
   const finishHoverButton = document.querySelector("#finish-hover");
@@ -945,13 +947,6 @@
         gardenWindAudio.src = SOUND_SCENES.water.src;
       }
       gardenWindAudio.loop = true;
-      if (gardenWindAudio.readyState < 1) {
-        await new Promise((resolve, reject) => {
-          gardenWindAudio.addEventListener("loadedmetadata", resolve, { once: true });
-          gardenWindAudio.addEventListener("error", reject, { once: true });
-          gardenWindAudio.load();
-        });
-      }
       if (Number.isFinite(gardenWindAudio.duration) && gardenWindAudio.duration > 0) {
         gardenWindAudio.currentTime = Math.min(
           Math.max(0, offset),
@@ -963,7 +958,7 @@
       waterIsPlaying = true;
     };
 
-    if (window.location.protocol === "file:") {
+    if (useMobileWaterMedia || window.location.protocol === "file:") {
       await playWithMediaElement();
       return;
     }
@@ -1093,7 +1088,7 @@
       }
     };
 
-    if (isPlaying) {
+    if (isPlaying && !useMobileWaterMedia) {
       fadeWindAudio(0, 700, () => { void finishSwitch(); });
     } else {
       void finishSwitch();
