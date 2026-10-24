@@ -8658,12 +8658,12 @@ body.guide-is-open .landscape-gate, body.feedback-is-open .landscape-gate { disp
 
 /* Two independent flights alternate every 34 seconds, never overlapping. */
 .entry-dandelion-seeds i:nth-child(2) {
-  left: 72%;
-  top: 92%;
+  left: 44.6%;
+  top: 83.6%;
   animation-name: entry-seed-drift-opposite, entry-seed-visibility;
   animation-delay: 41s;
 }
 @keyframes entry-seed-drift-opposite {
   0% { transform: translate3d(0, 0, 0) rotate(0); }
-  20.5882352941%, 100% { transform: translate3d(-15vw, -33vh, 0) rotate(-210deg); }
+  20.5882352941%, 100% { transform: translate3d(15vw, -33vh, 0) rotate(210deg); }
 }
