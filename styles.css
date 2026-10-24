@@ -5823,8 +5823,8 @@ body[data-view="entry"] .ambient-scene > .seed { display: none; }
   box-shadow: 0 0 7px rgba(248, 246, 231, .24);
   opacity: 0;
   will-change: transform, opacity;
-  animation: entry-seed-drift 34s linear 7s infinite,
-    entry-seed-visibility 34s linear 7s infinite;
+  animation: entry-seed-drift 68s linear 7s infinite,
+    entry-seed-visibility 68s linear 7s infinite;
 }
 
 .entry-dandelion-seeds i::before,
@@ -5843,13 +5843,13 @@ body[data-view="entry"] .ambient-scene > .seed { display: none; }
 .entry-dandelion-seeds i::after { transform: rotate(18deg); }
 @keyframes entry-seed-drift {
   0% { transform: translate3d(0, 0, 0) rotate(0); }
-  41.1764705882%, 100% { transform: translate3d(15vw, -33vh, 0) rotate(210deg); }
+  20.5882352941%, 100% { transform: translate3d(15vw, -33vh, 0) rotate(210deg); }
 }
 @keyframes entry-seed-visibility {
   0%, 100% { opacity: 0; }
-  3.2941176471% { opacity: .65; }
-  28.8235294118% { opacity: .55; }
-  38.7058823529% { opacity: 0; }
+  1.6470588235% { opacity: .65; }
+  14.4117647059% { opacity: .55; }
+  19.3529411765% { opacity: 0; }
 }
 
 html[data-light="night"] .entry-view .entry-footnote {
@@ -8654,4 +8654,16 @@ body.guide-is-open .landscape-gate, body.feedback-is-open .landscape-gate { disp
   .message-dialog { width: calc(100vw - 24px); }
   .message-sheet { padding: 38px 24px 26px; }
   .message-dialog .button-primary { width: 100%; }
+}
+
+/* Two independent flights alternate every 34 seconds, never overlapping. */
+.entry-dandelion-seeds i:nth-child(2) {
+  left: 72%;
+  top: 92%;
+  animation-name: entry-seed-drift-opposite, entry-seed-visibility;
+  animation-delay: 41s;
+}
+@keyframes entry-seed-drift-opposite {
+  0% { transform: translate3d(0, 0, 0) rotate(0); }
+  20.5882352941%, 100% { transform: translate3d(-15vw, -33vh, 0) rotate(-210deg); }
 }
