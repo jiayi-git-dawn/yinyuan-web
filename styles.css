@@ -5823,8 +5823,8 @@ body[data-view="entry"] .ambient-scene > .seed { display: none; }
   box-shadow: 0 0 7px rgba(248, 246, 231, .24);
   opacity: 0;
   will-change: transform, opacity;
-  animation: entry-seed-drift 31s linear 7s infinite,
-    entry-seed-visibility 31s linear 7s infinite;
+  animation: entry-seed-drift 14s linear 7s infinite,
+    entry-seed-visibility 14s linear 7s infinite;
 }
 
 .entry-dandelion-seeds i::before,
