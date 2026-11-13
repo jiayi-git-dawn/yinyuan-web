@@ -3703,7 +3703,7 @@ html[data-light="night"] .garden-view-image--path::after {
 }
 
 html[data-light="night"] .garden-view-image--water::after {
-  background-image: url("./assets/garden-water-night-loop-v3.webp");
+  background-image: url("./assets/garden-water-night-loop-v5.webp");
 }
 
 .garden-view-image--tree { background-image: url("./assets/garden-tree-seated-day-v3.webp"); }
@@ -3729,7 +3729,7 @@ html[data-light="night"] .garden-view-image--overview {
 html[data-light="night"] .garden-view-image--tree,
 html[data-light="night"] .garden-view-image--tree-bird { background-image: url("./assets/garden-tree-seated-night-v3.webp"); }
 html[data-light="night"] .garden-view-image--path { background-image: url("./assets/garden-path-lantern-night-v3.webp"); }
-html[data-light="night"] .garden-view-image--water { background-image: url("./assets/garden-water-night-loop-v3.webp"); }
+html[data-light="night"] .garden-view-image--water { background-image: url("./assets/garden-water-night-loop-v5.webp"); }
 
 .garden-3d-root::after {
   content: "";
@@ -7499,7 +7499,7 @@ html[data-light="night"] body[data-view="garden"] .garden-3d-root[data-place="pa
 
 html[data-light="night"] body[data-view="hover"] .garden-3d-root[data-place="water"] .garden-view-image--water,
 html[data-light="night"] body[data-view="garden"] .garden-3d-root[data-place="water"] .garden-view-image--water {
-  background-image: url("./assets/garden-water-night-loop-v3.webp") !important;
+  background-image: url("./assets/garden-water-night-loop-v5.webp") !important;
 }
 
 /* V2 水边：画面自己流动，声音仍由来园的人决定是否听见。 */
